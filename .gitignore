@@ -1,0 +1,8 @@
+.env
+tools
+data/item.json
+data/task
+data/review.json
+data/user.json
+data/lmdb_cache
+storage/*
