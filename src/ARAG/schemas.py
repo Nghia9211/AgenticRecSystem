@@ -15,10 +15,10 @@ class NLIContent(BaseModel):
     rationale : str = Field(description = "Reason why grade this score")
 
 class RankedItem(BaseModel):
-    item_id: Union[str, int] = Field(description="The unique identifier for the item.")
-    name: str = Field(description="The name of the item.")
-    category: str = Field(description="The category of the item.")
-    description: str = Field(description="A brief description of the item.")
+    item_id: Union[str, int] = Field(description="The unique identifier.")
+    name: str = Field(description="The name of the item or business.")
+    category: str = Field(default="General", description="Category: Book, Restaurant, Product, etc.") 
+    description: str = Field(default="", description="Description.") 
 
 class ItemRankerContent(BaseModel):
     ranked_list : List[RankedItem] = Field(description="A list of items, sorted in descending order of recommendation likelihood.")

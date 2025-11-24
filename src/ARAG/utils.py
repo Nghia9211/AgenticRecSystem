@@ -19,7 +19,28 @@ def find_top_k_similar_items(
         sim = cosine_similarity([item_vec], [query_vec])[0][0]
         sims.append((item, sim))
     
-    sims.sort(key = lambda x:[1], reverse = True)
+    sims.sort(key = lambda x: x[1], reverse = True)
     top_k_list = [item for item, sim in sims[:top_k]]
     
     return top_k_list
+
+def normalize_item_data(item: dict) -> dict:
+    "Normalize Input Data for ARAG - From source : Yelp, Amazon, Goodreads"
+    item_id = str(item.get('item_id', item.get('sub_item_id', 'unknown_id')))
+    name = item.get('title') or item.get('name') or item.get('business_name') or f"Item {item_id}"
+    raw_desc = item.get('description') or item.get('text') or ""
+    if isinstance(raw_desc, list):
+        clean_desc = " ".join([str(x) for x in raw_desc])
+    else:
+        clean_desc = str(raw_desc)
+    category = item.get('categories') or item.get('type') or "General"
+    if isinstance(category, list):
+        category = ", ".join(category)
+
+    return {
+        "item_id": item_id,
+        "name": name,
+        "description": clean_desc,
+        "category": str(category),
+        "original_data": item 
+    }

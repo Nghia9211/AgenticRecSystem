@@ -3,6 +3,7 @@ tools
 data/item.json
 data/task
 data/review.json
-data/user.json
+data/user*
 data/lmdb_cache
 storage/*
+data/gcn/*

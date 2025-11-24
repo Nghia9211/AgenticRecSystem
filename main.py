@@ -91,6 +91,7 @@ if __name__ == "__main__":
         data_base_path=args.db_path,
         embed_model_name=args.embed_model
     )
+    
     processor = ReviewProcessor()
     
     try:

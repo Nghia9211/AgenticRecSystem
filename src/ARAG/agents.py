@@ -3,12 +3,11 @@ from typing import Optional
 
 from langgraph.graph import END
 from langchain_core.runnables import RunnableConfig
-from sklearn.metrics.pairwise import cosine_similarity
-
+import ast
 from .prompts import *
 from .schemas import (BlackboardMessage, ItemRankerContent, NLIContent,
                           RankedItem, RecState)
-from .utils import find_top_k_similar_items
+from .utils import find_top_k_similar_items,normalize_item_data
 
 class ARAGAgents:
     def __init__(self, model, score_model, rank_model, embedding_function):
@@ -18,13 +17,26 @@ class ARAGAgents:
         self.embedding_function = embedding_function
 
     def initial_retrieval(self, state: RecState):
-        lt_ctx = state['long_term_ctx']
-        cur_ses = state['current_session']
-        candidate_list = state['candidate_list']
+            lt_ctx = state['long_term_ctx']
+            cur_ses = state['current_session']
+            candidate_list = state['candidate_list']
+            
+            normalized_candidates = []
+            for item in candidate_list:
+                if isinstance(item, str):
+                    try: item = ast.literal_eval(item)
+                    except: 
+                        try: item = json.loads(item)
+                        except: continue
+                
+                norm_item = normalize_item_data(item)
+                normalized_candidates.append(norm_item)
+            # ------------------------------------------------
 
-        query = f'Long-tern Context : {lt_ctx} \n Current Session {cur_ses } \n '
-        top_k_list = find_top_k_similar_items(query, candidate_list, self.embedding_function)
-        return {'top_k_candidate': top_k_list}
+            query = f'Long-term Context : {lt_ctx} \n Current Session {cur_ses } \n '
+            top_k_list = find_top_k_similar_items(query, candidate_list, self.embedding_function)
+
+            return {'top_k_candidate' : top_k_list, 'candidate_list': normalized_candidates}
 
     def nli_agent(self, state: RecState, config: Optional[RunnableConfig] = None):
         top_k_candidate = state['top_k_candidate']
@@ -112,57 +124,105 @@ class ARAGAgents:
 
         return {'blackboard': [csa_blackboard_message]}
 
-    def item_ranker_agent(self, state: RecState):
-        blackboard = state['blackboard']
-        items_to_rank = state['positive_list']
-        candidate_list = state['candidate_list']
+    def item_ranking_agent(self, state: RecState):
+            print("Item Ranking")
 
-        if not items_to_rank:
-            print("No items in the positive list to rank. Returning original candidate list.")
-            final_list = [RankedItem(**item) for item in candidate_list]
-            return {'final_rank_list': final_list}
+            blackboard = state['blackboard']
+            items_to_rank = state['positive_list']
+            # Lấy danh sách ứng viên đầy đủ ban đầu
+            candidate_list = state['candidate_list']
 
-        context_summary_msg = next(
-            (msg for msg in reversed(blackboard) if msg.role == "ContextSummary"), None)
-        user_understanding_msg = next(
-            (msg for msg in reversed(blackboard) if msg.role == "UserUnderstanding"), None)
+            # Nếu không có mục nào trong danh sách tích cực, hãy trả về danh sách ứng viên ban đầu
+            if not items_to_rank:
+                print("No items in the positive list to rank. Returning original candidate list.")
+                # Chuyển đổi dict thành đối tượng RankedItem để nhất quán kiểu dữ liệu
+                final_list = [RankedItem(**item) for item in candidate_list]
+                return {'final_rank_list': final_list}
 
-        context_summary = context_summary_msg.content if context_summary_msg else "No context summary available."
-        user_understanding = user_understanding_msg.content if user_understanding_msg else "No user understanding available."
+            context_summary_msg = next((msg for msg in reversed(blackboard) if msg.role == "ContextSummary"), None)
+            user_understanding_msg = next((msg for msg in reversed(blackboard) if msg.role == "UserUnderStanding"), None)
 
-        items_to_rank_str = "\n\n".join(
-            [json.dumps(item, indent=2) for item in items_to_rank])
+            context_summary = context_summary_msg.content if context_summary_msg else "No context summary available."
+            user_understanding = user_understanding_msg.content if user_understanding_msg else "No user understanding available."
 
-        prompt = create_item_ranking_prompt(user_summary=user_understanding, context_summary=context_summary, items_to_rank_str=items_to_rank_str)
+            items_to_rank_str = "\n\n".join([json.dumps(item, indent=2) for item in items_to_rank])
 
-        result_from_model = self.rank_model.invoke(prompt)
-        ranked_positive_items = result_from_model.ranked_list
+            base_prompt = """### ROLE ###
+You are an Elite Recommendation Ranking Expert. Your sole responsibility is to take a user profile, a context summary, and a list of PRE-VETTED, POSITIVE items, then rank them in descending order of likelihood for the user to select.
 
-        ranked_item_ids = {item.item_id for item in ranked_positive_items}
+### INPUTS ###
+**1. User Profile:**
+{user_summary}
 
-        unranked_items_dicts = [
-            item for item in candidate_list if item['item_id'] not in ranked_item_ids
-        ]
-        
+**2. Context Summary of Positive Items:**
+{context_summary}
 
-        """" Phần này check kĩ lại """
-        unranked_items = [
-            RankedItem(
-                item_id=item.get('item_id', ''),
-                name=item.get('title', ''),
-                category=item.get('type', 'book'),
-                description=item.get('description', '')
-            ) for item in unranked_items_dicts
-        ]
+**3. Candidate Items to Rank (These have been pre-filtered for relevance):**
+{items_to_rank_str}
 
-        final_full_ranked_list = ranked_positive_items + unranked_items
-        result = [item.item_id for item in final_full_ranked_list]
-        item_ranking_message = BlackboardMessage(
-            role="ItemRanker",
-            content=result_from_model
-        )
+### RANKING PHILOSOPHY ###
+Think like a personal curator whose goal is to maximize user delight and engagement.
+1.  **Prioritize Immediate Intent:** Items that most directly satisfy the user's current goal must be ranked highest.
+2.  **Align with Core Preferences:** Consider how well each item fits the user's long-term tastes and aesthetic.
+3.  **Harness the Context:** Use the "Context Summary" to understand the key appealing features of this item set and prioritize items that are the best examples of those features.
+4.  **Diversify and Delight:** If two items seem equally relevant, give a slight edge to the one that might introduce a bit of novelty or expand the user's horizons, preventing filter bubbles.
 
-        return {'final_rank_list': result, 'blackboard': [item_ranking_message]}
+### IMPORTANT TASK - MUST FOLLOW ###
+1.  Create the final ranked list of ONLY the candidate items provided to you in the `Candidate Items to Rank` section.
+2.  Write a brief but comprehensive explanation for your overall ranking strategy, especially your reasoning for the top 2-3 items.
+3.  You MUST call the `ItemRankerContent` tool with your final ranked list and explanation. Your entire response must be ONLY the tool call.
+"""
+
+            prompt = base_prompt.format(
+                user_summary=user_understanding,
+                context_summary=context_summary,
+                items_to_rank_str=items_to_rank_str
+            )
+
+            try:
+                result_from_model = self.rank_model.invoke(prompt)
+            except:
+                result_from_model = None
+            if not result_from_model:
+                print("⚠️ Model failed. Using original order.")
+                ranked_positive_items = [
+                    RankedItem(
+                        item_id=str(i.get('item_id')),
+                        name=str(i.get('title') or i.get('name') or 'Unknown'),
+                        category="General",
+                        description=str(i.get('description') if not isinstance(i.get('description'), list) else " ".join(map(str, i['description'])))
+                    ) for i in items_to_rank
+                ]
+                # Tạo giả object kết quả để lưu vào blackboard
+                result_from_model = ItemRankerContent(ranked_list=ranked_positive_items, explanation="Fallback strategy")
+            else:
+                ranked_positive_items = result_from_model.ranked_list
+
+            ranked_item_ids = {item.item_id for item in ranked_positive_items}
+
+            unranked_items = []
+            for item in candidate_list: 
+                if str(item['item_id']) not in ranked_item_ids:
+                    unranked_items.append(
+                        RankedItem(
+                            item_id=item['item_id'],
+                            name=item['name'],
+                            category=item['category'],
+                            description=item['description'] 
+                        )
+                    )
+
+            final_full_ranked_list = ranked_positive_items + unranked_items
+
+            result =  [item.item_id for item in final_full_ranked_list]
+
+
+            item_ranking_message = BlackboardMessage(
+                role="ItemRanker",
+                content=result_from_model 
+            )
+
+            return {'final_rank_list':result , 'blackboard': [item_ranking_message]}
     
     def should_proceed_to_summary(self, state: RecState):
         blackboard = state['blackboard']

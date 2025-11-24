@@ -12,7 +12,6 @@ DATA_DIR="../data"
 STORAGE_DIR="../storage"
 
 if [ "$MODE" == "review" ]; then
-
     echo ">>> Selected Mode : Review <<<"
     echo "======================================================"
     echo "Building vector store for user reviews..."
@@ -21,7 +20,6 @@ if [ "$MODE" == "review" ]; then
     python $PYTHON_SCRIPT \
         --data_path "$DATA_DIR/review.json" \
         --save_path "$STORAGE_DIR/user_storage" \
-        --file_type "review" \
         --embed_model "$EMBED_MODEL" \
         --batch_size $BATCH_SIZE
 
@@ -37,7 +35,6 @@ elif [ "$MODE" == "item" ]; then
     python $PYTHON_SCRIPT \
         --data_path "$DATA_DIR/item.json" \
         --save_path "$STORAGE_DIR/item_storage" \
-        --file_type "item" \
         --embed_model "$EMBED_MODEL" \
         --batch_size $BATCH_SIZE
 
