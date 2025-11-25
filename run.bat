@@ -6,7 +6,6 @@ set "PROVIDER=groq"
 set "INPUT_FILE=tests/test_user.json"
 set "DB_PATH=storage/user_storage"
 
-REM SET "MODEL_NAME=llama3-70b-8192"
 set "MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct"
 
 set "EMBED_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2"

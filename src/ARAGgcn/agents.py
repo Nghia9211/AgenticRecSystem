@@ -7,14 +7,24 @@ import ast
 from .prompts import *
 from .schemas import (BlackboardMessage, ItemRankerContent, NLIContent,
                           RankedItem, RecState)
-from .utils import find_top_k_similar_items,normalize_item_data
+from .utils import find_top_k_similar_items,normalize_item_data, _get_gcn_similar_items
+import torch
 
 class ARAGAgents:
-    def __init__(self, model, score_model, rank_model, embedding_function):
+    def __init__(self, model, score_model, rank_model, embedding_function, gcn_path):
         self.model = model
         self.score_model = score_model
         self.rank_model = rank_model
         self.embedding_function = embedding_function
+
+        self.gcn_embeddings = None
+        if gcn_path:
+            try:
+                print(f"Loading GCN Embeddings from {gcn_path}...")
+                self.gcn_embeddings = torch.load(gcn_path)
+                print("GCN Embeddings loaded successfully.")
+            except Exception as e:
+                print(f"WARNING: Could not load GCN embeddings: {e}")
 
     def initial_retrieval(self, state: RecState):
             lt_ctx = state['long_term_ctx']
@@ -31,12 +41,29 @@ class ARAGAgents:
                 
                 norm_item = normalize_item_data(item)
                 normalized_candidates.append(norm_item)
-            # ------------------------------------------------
+
 
             query = f'Long-term Context : {lt_ctx} \n Current Session {cur_ses } \n '
-            top_k_list = find_top_k_similar_items(query, candidate_list, self.embedding_function)
+            semantic_top_k = find_top_k_similar_items(query, candidate_list, self.embedding_function)
 
-            return {'top_k_candidate' : top_k_list, 'candidate_list': normalized_candidates}
+            
+            anchor_ids = [str(item['item_id']) for item in semantic_top_k]
+        
+            gcn_top_k = _get_gcn_similar_items(
+                anchor_item_ids=anchor_ids, 
+                candidate_list=candidate_list, 
+                gcn_embeddings = self.gcn_embeddings,
+                top_k=3
+            )
+
+            combined_map = {str(item['item_id']): item for item in semantic_top_k + gcn_top_k}
+            final_candidates = list(combined_map.values())
+
+            print(f"Semantic Found: {[i['item_id'] for i in semantic_top_k]}")
+            print(f"GCN Found: {[i['item_id'] for i in gcn_top_k]}")
+
+            print(f"Final Candidates : {final_candidates} \n\n")
+            return {'top_k_candidate' : final_candidates, 'candidate_list': normalized_candidates}
 
     def nli_agent(self, state: RecState, config: Optional[RunnableConfig] = None):
         top_k_candidate = state['top_k_candidate']
@@ -124,7 +151,7 @@ class ARAGAgents:
 
         return {'blackboard': [csa_blackboard_message]}
 
-    def item_ranking_agent(self, state: RecState):
+    def item_ranker_agent(self, state: RecState):
             print("Item Ranking")
 
             blackboard = state['blackboard']

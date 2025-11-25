@@ -3,13 +3,14 @@ import sys
 import argparse
 from dotenv import load_dotenv
 
-# Nhập cả hai lớp mô hình từ LangChain
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
+from src.ARAGgcn.processing_input import ReviewProcessor
+from src.ARAGgcn.recommender import ARAGgcnRecommender
+
 from src.ARAG.processing_input import ReviewProcessor
 from src.ARAG.recommender import ARAGRecommender
-
 import json
 
 if __name__ == "__main__":
@@ -22,6 +23,11 @@ if __name__ == "__main__":
                         choices=['groq', 'openai'],
                         default='groq', 
                         help="The LLM provider to use.")
+    
+    parser.add_argument("--recommender", 
+                        choices=['arag', 'arggcn'],
+                        default='arag', 
+                        help="Recommender")
                         
     parser.add_argument("--input_file", 
                         required=True, 
@@ -39,19 +45,7 @@ if __name__ == "__main__":
                         default="sentence-transformers/all-MiniLM-L6-v2", 
                         help="Name of the sentence-transformer embedding model.")
                         
-    
-    parser.add_argument("--days-i", 
-                        type=int, 
-                        default=20, 
-                        help="Maximum number of days for Short Term Context.")
-    parser.add_argument("--items-k", 
-                        type=int, 
-                        default=10, 
-                        help="Maximum number of items for Short Term Context.")
-    parser.add_argument("--items-m", 
-                        type=int, 
-                        default=50, 
-                        help="Maximum number of items for Long Term Context.")
+
     args = parser.parse_args()
 
     load_dotenv()
@@ -63,7 +57,7 @@ if __name__ == "__main__":
     if args.provider == 'groq':
         api_key_env = 'GROQ_API_KEY'
         if not model_name:
-            model_name = 'llama3-8b-8192' 
+            model_name = 'meta-llama/llama-4-scout-17b-16e-instruct' 
         api_key = os.getenv(api_key_env)
         if not api_key:
             print(f"Error: Environment variable '{api_key_env}' not found for the 'groq' provider.")
@@ -86,24 +80,32 @@ if __name__ == "__main__":
         print(f"Error: Invalid provider '{args.provider}'. Please choose 'groq' or 'openai'.")
         sys.exit(1)
 
-    arag_recommender = ARAGRecommender(
-        model=model, 
-        data_base_path=args.db_path,
-        embed_model_name=args.embed_model
-    )
-    
-    processor = ReviewProcessor()
+    if args.recommender == 'arag' :
+        arag_recommender = ARAGRecommender(
+            model=model, 
+            data_base_path=args.db_path,
+            embed_model_name=args.embed_model,
+        )
+    elif args.recommder == 'araggcn':
+        arag_recommender = ARAGgcnRecommender(
+            model=model, 
+            data_base_path=args.db_path,
+            embed_model_name=args.embed_model,
+            gcn_model_path=r'./src/ARAGgcn/gcn/gcn_embeddings.pt'
+        )
+        
+    processor = ReviewProcessor(target_source='amazon')
     
     try:
-            with open(args.input_file, 'r', encoding='utf-8') as f:
-                combined_data = json.load(f)
-            
-            user_reviews_data = combined_data.get("user_reviews")
-            candidate_items_data = combined_data.get("candidate_items")
+        with open(args.input_file, 'r', encoding='utf-8') as f:
+            combined_data = json.load(f)
+        
+        user_reviews_data = combined_data.get("user_reviews")
+        candidate_items_data = combined_data.get("candidate_list")
 
-            if not user_reviews_data or not candidate_items_data:
-                print("Error: The JSON file must contain both 'user_reviews' and 'candidate_items' keys.")
-                sys.exit(1)
+        if not user_reviews_data or not candidate_items_data:
+            print("Error: The JSON file must contain both 'user_reviews' and 'candidate_items' keys.")
+            sys.exit(1)
 
     except FileNotFoundError:
         print(f"Error: Input file not found at '{args.input_file}'")
@@ -112,11 +114,9 @@ if __name__ == "__main__":
         print(f"Error: Could not decode JSON from the file '{args.input_file}'. Check for formatting errors.")
         sys.exit(1)
 
-    if not processor.load_reviews(user_reviews_data):
-        print("Could not load reviews from the input file.")
-        sys.exit(1)
+    processor.load_reviews(user_reviews_data)
 
-    processor.process_and_split(args.days_i, args.items_k, args.items_m)
+    processor.process_and_split()
 
     long_term_ctx = processor.long_term_context
     current_session = processor.short_term_context
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     print("\n\n--- FINAL RANKED LIST ---")
     if final_state.get('final_rank_list'):
         for i, item in enumerate(final_state['final_rank_list']):
-            print(f"Rank {i+1}: {getattr(item, 'item_id', 'Unknown ID')}")
+            print(f"Rank {i+1}: {item}")
 
         final_ranker_message = next((msg for msg in reversed(final_state.get('blackboard', [])) if getattr(msg, 'role', '') == "ItemRanker"), None)
         if final_ranker_message and hasattr(final_ranker_message.content, 'explanation'):

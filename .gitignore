@@ -6,4 +6,7 @@ data/review.json
 data/user*
 data/lmdb_cache
 storage/*
-data/gcn/*
+data/graph_data/*
+test.py
+src/ARAGgcn/gcn/gcn_embeddings.pt
+src/ARAGgcn/gcn/processed_graph_data.pt
