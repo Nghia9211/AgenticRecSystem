@@ -10,6 +10,7 @@ class GCNLayer(nn.Module):
     
     def forward(self, A, X):
         H = self.linear(X) 
+        # Matrix Multiplication
         out = torch.sparse.mm(A, H)
         return out
 
@@ -28,7 +29,7 @@ class GCN(nn.Module):
         return x
 
 DATA_FILE = 'processed_graph_data.pt'
-print(f"Đang load dữ liệu từ {DATA_FILE}...")
+print(f"Load Data from {DATA_FILE}...")
 
 data = torch.load(DATA_FILE)
 node_item_mapping = data['node_item_mapping']
@@ -76,7 +77,6 @@ for epoch in range(EPOCHS):
 print(f"Training in {time.time() - start_time:.2f}s")
 
 EXPORT_FILE = 'gcn_embeddings.pt'
-print(f"\n Export training to {EXPORT_FILE}...")
 
 model.eval()
 with torch.no_grad():

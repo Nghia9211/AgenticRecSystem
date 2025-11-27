@@ -129,13 +129,9 @@ class ARAGAgents:
 
             blackboard = state['blackboard']
             items_to_rank = state['positive_list']
-            # Lấy danh sách ứng viên đầy đủ ban đầu
             candidate_list = state['candidate_list']
-
-            # Nếu không có mục nào trong danh sách tích cực, hãy trả về danh sách ứng viên ban đầu
             if not items_to_rank:
                 print("No items in the positive list to rank. Returning original candidate list.")
-                # Chuyển đổi dict thành đối tượng RankedItem để nhất quán kiểu dữ liệu
                 final_list = [RankedItem(**item) for item in candidate_list]
                 return {'final_rank_list': final_list}
 
@@ -147,37 +143,9 @@ class ARAGAgents:
 
             items_to_rank_str = "\n\n".join([json.dumps(item, indent=2) for item in items_to_rank])
 
-            base_prompt = """### ROLE ###
-You are an Elite Recommendation Ranking Expert. Your sole responsibility is to take a user profile, a context summary, and a list of PRE-VETTED, POSITIVE items, then rank them in descending order of likelihood for the user to select.
-
-### INPUTS ###
-**1. User Profile:**
-{user_summary}
-
-**2. Context Summary of Positive Items:**
-{context_summary}
-
-**3. Candidate Items to Rank (These have been pre-filtered for relevance):**
-{items_to_rank_str}
-
-### RANKING PHILOSOPHY ###
-Think like a personal curator whose goal is to maximize user delight and engagement.
-1.  **Prioritize Immediate Intent:** Items that most directly satisfy the user's current goal must be ranked highest.
-2.  **Align with Core Preferences:** Consider how well each item fits the user's long-term tastes and aesthetic.
-3.  **Harness the Context:** Use the "Context Summary" to understand the key appealing features of this item set and prioritize items that are the best examples of those features.
-4.  **Diversify and Delight:** If two items seem equally relevant, give a slight edge to the one that might introduce a bit of novelty or expand the user's horizons, preventing filter bubbles.
-
-### IMPORTANT TASK - MUST FOLLOW ###
-1.  Create the final ranked list of ONLY the candidate items provided to you in the `Candidate Items to Rank` section.
-2.  Write a brief but comprehensive explanation for your overall ranking strategy, especially your reasoning for the top 2-3 items.
-3.  You MUST call the `ItemRankerContent` tool with your final ranked list and explanation. Your entire response must be ONLY the tool call.
-"""
-
-            prompt = base_prompt.format(
-                user_summary=user_understanding,
+            prompt = create_item_ranking_prompt(user_summary=user_understanding,
                 context_summary=context_summary,
-                items_to_rank_str=items_to_rank_str
-            )
+                items_to_rank=items_to_rank_str) 
 
             try:
                 result_from_model = self.rank_model.invoke(prompt)
@@ -193,7 +161,6 @@ Think like a personal curator whose goal is to maximize user delight and engagem
                         description=str(i.get('description') if not isinstance(i.get('description'), list) else " ".join(map(str, i['description'])))
                     ) for i in items_to_rank
                 ]
-                # Tạo giả object kết quả để lưu vào blackboard
                 result_from_model = ItemRankerContent(ranked_list=ranked_positive_items, explanation="Fallback strategy")
             else:
                 ranked_positive_items = result_from_model.ranked_list
