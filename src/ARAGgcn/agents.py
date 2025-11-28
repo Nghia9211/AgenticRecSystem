@@ -11,16 +11,33 @@ from .utils import find_top_k_similar_items,normalize_item_data, _get_gcn_simila
 import torch
 
 class ARAGAgents:
-    def __init__(self, model, score_model, rank_model, embedding_function, gcn_path):
+    def __init__(self, model, score_model, rank_model, embedding_function, gcn_path, graph_data_path = None):
         self.model = model
         self.score_model = score_model
         self.rank_model = rank_model
         self.embedding_function = embedding_function
 
+        self.adj_matrix = None
+        self.node_mapping = None 
+        
+        if graph_data_path:
+            try:
+                print(f"Loading Graph Structure from {graph_data_path}...")
+                graph_data = torch.load(graph_data_path)
+                
+                self.adj_matrix = graph_data['adj_norm']
+            
+                raw_mapping = graph_data['node_item_mapping']
+                self.str_to_idx = {str(val): i for i, val in enumerate(raw_mapping)}
+                self.idx_to_str = {i: str(val) for i, val in enumerate(raw_mapping)}
+                
+                print("Graph Structure loaded successfully.")
+            except Exception as e:
+                print(f"WARNING: Could not load Graph data: {e}")
+
         self.gcn_embeddings = None
         if gcn_path:
             try:
-                print(f"Loading GCN Embeddings from {gcn_path}...")
                 self.gcn_embeddings = torch.load(gcn_path)
                 print("GCN Embeddings loaded successfully.")
             except Exception as e:
@@ -46,24 +63,54 @@ class ARAGAgents:
             query = f'Long-term Context : {lt_ctx} \n Current Session {cur_ses } \n '
             semantic_top_k = find_top_k_similar_items(query, candidate_list, self.embedding_function)
 
+            num_nodes = self.adj_matrix.shape[0]
+            user_preference_vector = torch.zeros(num_nodes).to(self.adj_matrix.device)
             
-            anchor_ids = [str(item['item_id']) for item in semantic_top_k]
-        
-            gcn_top_k = _get_gcn_similar_items(
-                anchor_item_ids=anchor_ids, 
-                candidate_list=candidate_list, 
-                gcn_embeddings = self.gcn_embeddings,
-                top_k=3
-            )
+            found_anchors = 0
+            for item in semantic_top_k:
+                iid = str(item['item_id'])
+                if iid in self.str_to_idx:
+                    idx = self.str_to_idx[iid]
+                    user_preference_vector[idx] = 1.0 
+                    found_anchors += 1
+            
+            gcn_candidates = []
+            if found_anchors > 0 and self.adj_matrix is not None:
+                user_preference_vector = user_preference_vector / found_anchors
+                
+                # Hop 1 :
+                prop_vec = user_preference_vector.unsqueeze(1) 
+                prop_vec = torch.sparse.mm(self.adj_matrix, prop_vec)
+                
+                # Hop 2 (Item -> User -> Item 
+                prop_vec = torch.sparse.mm(self.adj_matrix, prop_vec)
+                
+                # Hop 3 (Optional)
+                prop_vec = torch.sparse.mm(self.adj_matrix, prop_vec)
+                
+                scores = prop_vec.squeeze()
+                
+                for item in semantic_top_k:
+                    iid = str(item['item_id'])
+                    if iid in self.str_to_idx:
+                        scores[self.str_to_idx[iid]] = -1.0 
 
-            combined_map = {str(item['item_id']): item for item in semantic_top_k + gcn_top_k}
+                top_indices = torch.topk(scores, k=10).indices.tolist()
+                
+                for idx in top_indices:
+                    original_id = self.idx_to_str.get(idx)
+                    found_item = next((x for x in candidate_list if str(x['item_id']) == original_id), None)
+                    if found_item:
+                        gcn_candidates.append(found_item)
+
+            combined_map = {str(item['item_id']): item for item in semantic_top_k + gcn_candidates}
             final_candidates = list(combined_map.values())
-
-            print(f"Semantic Found: {[i['item_id'] for i in semantic_top_k]}")
-            print(f"GCN Found: {[i['item_id'] for i in gcn_top_k]}")
-
-            print(f"Final Candidates : {final_candidates} \n\n")
+            print(f"Final Candidates : {final_candidates}")
+            
+            
             return {'top_k_candidate' : final_candidates, 'candidate_list': normalized_candidates}
+    
+    
 
     def nli_agent(self, state: RecState, config: Optional[RunnableConfig] = None):
         top_k_candidate = state['top_k_candidate']
@@ -171,7 +218,7 @@ class ARAGAgents:
 
             items_to_rank_str = "\n\n".join([json.dumps(item, indent=2) for item in items_to_rank])
 
-            prompt = create_item_ranking_prompt(user_summary=user_understanding,
+            prompt = create_item_ranking_prompt(user_behavior_summary=user_understanding,
                 context_summary=context_summary,
                 items_to_rank=items_to_rank_str) 
             

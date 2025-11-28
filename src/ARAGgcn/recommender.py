@@ -8,7 +8,7 @@ from .schemas import ItemRankerContent, NLIContent, RecState
 
 
 class ARAGgcnRecommender:
-    def __init__(self, model: ChatGroq, data_base_path: str, embed_model_name="sentence-transformers/all-MiniLM-L6-v2", gcn_model_path: str = None):
+    def __init__(self, model: ChatGroq, data_base_path: str, embed_model_name="sentence-transformers/all-MiniLM-L6-v2", gcn_model_path: str = None, graph_data_path = None):
         self.embedding_function = HuggingFaceEmbeddings(
             model_name=embed_model_name)
 
@@ -24,7 +24,8 @@ class ARAGgcnRecommender:
             score_model=model.with_structured_output(NLIContent),
             rank_model=model.with_structured_output(ItemRankerContent),
             embedding_function=self.embedding_function,
-            gcn_path=gcn_model_path
+            gcn_path=gcn_model_path,
+            graph_data_path = graph_data_path
         )
         builder = GraphBuilder(agent_provider=self.agents)
         self.workflow = builder.build()
