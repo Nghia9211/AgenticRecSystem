@@ -8,5 +8,5 @@ data/lmdb_cache
 storage/*
 data/graph_data/*
 test.py
-src/ARAGgcn/gcn/gcn_embeddings.pt
-src/ARAGgcn/gcn/processed_graph_data.pt
+src/ARAGgcn/gcn/gcn_embeddings*
+src/ARAGgcn/gcn/processed_graph_data*

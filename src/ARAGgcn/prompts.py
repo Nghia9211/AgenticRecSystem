@@ -106,12 +106,11 @@ Think like a personal curator whose goal is to maximize user delight and engagem
 3.  **Harness the Context:** Use the "Context Summary" to understand the key appealing features of this item set and prioritize items that are the best examples of those features.
 4.  **Diversify and Delight:** If two items seem equally relevant, give a slight edge to the one that might introduce a bit of novelty or expand the user's horizons, preventing filter bubbles.
 
-### TASK ###
+### IMPORTANT TASK - MUST FOLLOW ###
 1.  Create the final ranked list of ONLY the candidate items provided to you in the `Candidate Items to Rank` section.
 2.  Write a brief but comprehensive explanation for your overall ranking strategy, especially your reasoning for the top 2-3 items.
 3.  You MUST call the `ItemRankerContent` tool with your final ranked list and explanation. Your entire response must be ONLY the tool call.
 """
-
 def create_assess_nli_score_prompt(item,lt_ctx: str,cur_ses: str,item_id)->str:
     return ASSESS_NLI_SCORE_PROMPT_TEMPLATE.format(item=item, long_term_context = lt_ctx, current_session = cur_ses, item_id = item_id)
 def create_summary_user_behavior_prompt(lt_ctx : str, cur_ses : str) -> str:

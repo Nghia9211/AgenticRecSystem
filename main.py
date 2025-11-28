@@ -9,7 +9,6 @@ from langchain_openai import ChatOpenAI
 from src.ARAGgcn.processing_input import ReviewProcessor
 from src.ARAGgcn.recommender import ARAGgcnRecommender
 
-from src.ARAG.processing_input import ReviewProcessor
 from src.ARAG.recommender import ARAGRecommender
 import json
 
@@ -25,7 +24,7 @@ if __name__ == "__main__":
                         help="The LLM provider to use.")
     
     parser.add_argument("--recommender", 
-                        choices=['arag', 'arggcn'],
+                        choices=['arag', 'araggcn'],
                         default='arag', 
                         help="Recommender")
                         
@@ -34,7 +33,7 @@ if __name__ == "__main__":
                         help="Path to the input user history/review JSON file.")
     parser.add_argument("--db-path", 
                         required=False,
-                        default = "storage/user_storage" , 
+                        default = "storage/item_storage" , 
                         help="Path to the FAISS vector database directory.")
                         
 
@@ -86,14 +85,15 @@ if __name__ == "__main__":
             data_base_path=args.db_path,
             embed_model_name=args.embed_model,
         )
-    elif args.recommder == 'araggcn':
+    elif args.recommender == 'araggcn':
         arag_recommender = ARAGgcnRecommender(
             model=model, 
             data_base_path=args.db_path,
             embed_model_name=args.embed_model,
-            gcn_model_path=r'./src/ARAGgcn/gcn/gcn_embeddings.pt'
+            gcn_model_path=r'./src/ARAGgcn/lgcn/gcn_embeddings_3hop.pt',
+            graph_data_path=r'./src/ARAGgcn/lgcn/processed_graph_data.pt'
         )
-        
+        print("ARAG GCN")
     processor = ReviewProcessor(target_source='amazon')
     
     try:

@@ -22,10 +22,9 @@ def build_graph_with_networkx(user_file, item_file, review_file):
             G.add_node(data['item_id'], node_type='item')
             item_ids_list.append(data['item_id'])
 
-    print(f"Tổng số Nodes ban đầu: {G.number_of_nodes()}")
-
-
+    print(f"Total Initialize Nodes: {G.number_of_nodes()}")
     print("Loading Reviews (Edges)...")
+    
     edge_count = 0
     try:
         with open(review_file, 'r', encoding='utf-8') as f:
