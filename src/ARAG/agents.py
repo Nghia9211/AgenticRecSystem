@@ -31,7 +31,6 @@ class ARAGAgents:
                 
                 norm_item = normalize_item_data(item)
                 normalized_candidates.append(norm_item)
-            # ------------------------------------------------
 
             query = f'Long-term Context : {lt_ctx} \n Current Session {cur_ses } \n '
             top_k_list = find_top_k_similar_items(query, candidate_list, self.embedding_function)

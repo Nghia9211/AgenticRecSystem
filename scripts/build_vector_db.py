@@ -52,22 +52,6 @@ def build_and_save_vector_store_batched(data_path: str, save_path: str, embed_mo
     vector_store.save_local(save_path)
 
 if __name__ == "__main__":
-
-    # build_and_save_vector_store_batched(
-    #     data_path='../data/item.json',
-    #     save_path='item_storage',
-    #     embed_model_name="sentence-transformers/all-MiniLM-L6-v2",
-    #     batch_size=256
-    # )
-
-    build_and_save_vector_store_batched(
-        data_path='../data/review.json',
-        save_path='../storage/user_storage',
-        embed_model_name="sentence-transformers/all-MiniLM-L6-v2",
-        batch_size=256
-    )
-
-if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build and save a FAISS vector store from a JSONL file.")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the input JSONL data file.")
     parser.add_argument("--save_path", type=str, required=True, help="Path to save the local FAISS vector store.")
