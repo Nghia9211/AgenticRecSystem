@@ -103,8 +103,6 @@ def main():
             print(f"Epoch {epoch+1:03d}/{args.epochs} | Loss: {loss.item():.4f}")
 
     print(f"Training finished in {time.time() - start_time:.2f}s")
-
-    # Vẽ biểu đồ (giả sử hàm plot_loss của bạn tự lưu file hoặc hiển thị)
     plot_loss(loss_history, reg_history)
     print("Save plot Loss Figure")
 

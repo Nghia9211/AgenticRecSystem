@@ -13,8 +13,8 @@ echo Building vector store for item...
 echo ======================================================
 
 python %PYTHON_SCRIPT% ^
-    --data_path "%DATA_DIR%/item_goodreads.json" ^
-    --save_path "%STORAGE_DIR%/item_storage_goodreads" ^
+    --data_path "%DATA_DIR%/item_yelp.json" ^
+    --save_path "%STORAGE_DIR%/item_storage_yelp" ^
     --embed_model "%EMBED_MODEL%" ^
     --batch_size %BATCH_SIZE%
 
