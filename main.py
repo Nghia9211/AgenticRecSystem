@@ -90,8 +90,7 @@ if __name__ == "__main__":
             model=model, 
             data_base_path=args.db_path,
             embed_model_name=args.embed_model,
-            gcn_model_path=r'./src/ARAGgcn/lgcn/gcn_embeddings_3hop.pt',
-            graph_data_path=r'./src/ARAGgcn/lgcn/processed_graph_data.pt'
+            gcn_model_path=r'./src/ARAGgcn/lgcn/gcn_embeddings_3hop_amazon.pt',
         )
         print("ARAG GCN")
     processor = ReviewProcessor(target_source='amazon')
@@ -122,6 +121,7 @@ if __name__ == "__main__":
     current_session = processor.short_term_context
 
     final_state = arag_recommender.get_recommendation(
+        user_id = "AE2KV2J6X2OBDKTEAUMIHEXMLFYQ",
         long_term_ctx=long_term_ctx,
         current_session=current_session,
         nli_threshold=3.0,

@@ -4,7 +4,7 @@ setlocal
 set "PYTHON_SCRIPT=main.py"
 set "PROVIDER=groq"
 set "INPUT_FILE=tests/user_amazon.json"
-set "DB_PATH=storage/user_storage"
+set "DB_PATH=storage/item_storage_amazon"
 set "RECOMMENDER=araggcn"
 set "MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct"
 
