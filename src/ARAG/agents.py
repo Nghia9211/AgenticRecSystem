@@ -7,7 +7,7 @@ import ast
 from .prompts import *
 from .schemas import (BlackboardMessage, ItemRankerContent, NLIContent,
                           RankedItem, RecState)
-from .utils import find_top_k_similar_items,normalize_item_data
+from .utils import find_top_k_similar_items,normalize_item_data,print_agent_step
 
 class ARAGAgents:
     def __init__(self, model, score_model, rank_model, embedding_function):
@@ -17,6 +17,12 @@ class ARAGAgents:
         self.embedding_function = embedding_function
 
     def initial_retrieval(self, state: RecState):
+            """"
+
+            Print các item + Name ra và tìm reason tại sao nó lại retrieve được item đấy    
+            => Loop refine quá trình retrieve 
+            
+            """
             lt_ctx = state['long_term_ctx']
             cur_ses = state['current_session']
             candidate_list = state['candidate_list']
@@ -33,7 +39,11 @@ class ARAGAgents:
                 normalized_candidates.append(norm_item)
 
             query = f'Long-term Context : {lt_ctx} \n Current Session {cur_ses } \n '
+    
             top_k_list = find_top_k_similar_items(query, candidate_list, self.embedding_function)
+
+            print_agent_step("Retrieval", "Đã tìm thấy ứng viên tiềm năng", [i.get('name') or i.get('title') for i in top_k_list])
+            
 
             return {'top_k_candidate' : top_k_list, 'candidate_list': normalized_candidates}
 
@@ -50,14 +60,29 @@ class ARAGAgents:
 
         prompts_list = [
             create_assess_nli_score_prompt(
-                item=item, lt_ctx = lt_ctx, cur_ses = cur_ses, item_id =item['item_id'])
+                item=item, lt_ctx = lt_ctx, cur_ses = cur_ses, item_id = item['item_id'])
             for item in top_k_candidate
         ]
         all_nli_outputs = self.score_model.batch(prompts_list)
 
         positive_item_list = []
         new_blackboard_messages = []
+
+
+        print(f"\033[93m[NLI Scoring]\033[0m Threshold: {threshold}")
         for item, nli_output in zip(top_k_candidate, all_nli_outputs):
+            status = "✅ PASS" if nli_output.score >= threshold else "❌ FAIL"
+            print(f"  - {status} | Score: {nli_output.score:.1f} | Item: {item.get('name')}")
+            
+            if nli_output.score >= threshold:
+                positive_item_list.append(item)
+
+        for item, nli_output in zip(top_k_candidate, all_nli_outputs):
+
+            item_name = item.get('name') or item.get('title') or "Unkown"
+            print(f"---")
+            print(f"Item: {item_name} | Score: {nli_output.score}")
+            print(f"Rationale: {nli_output.rationale}") # QUAN TRỌNG: Xem Agent có đang "bịa" lý do không
             if nli_output.score >= threshold:
                 positive_item_list.append(item)
 
@@ -77,7 +102,7 @@ class ARAGAgents:
         prompt = create_summary_user_behavior_prompt(
             lt_ctx = lt_ctx, cur_ses = cur_ses)
         uua_output = self.model.invoke(prompt).content
-
+        print_agent_step("User Understanding", "Tóm tắt hành vi người dùng thành công", uua_output)
         uua_blackboard_message = BlackboardMessage(
             role="UserUnderStanding",
             content=uua_output
@@ -116,6 +141,8 @@ class ARAGAgents:
             user_summary=user_summary_text, items_with_scores_str=items_with_scores_str)
         csa_output = self.model.invoke(prompt).content
 
+        print_agent_step("Context Summary", "Đã tạo lý do đề xuất tổng hợp (Rationale)", csa_output)
+        
         csa_blackboard_message = BlackboardMessage(
             role="ContextSummary",
             content=csa_output
@@ -123,8 +150,15 @@ class ARAGAgents:
 
         return {'blackboard': [csa_blackboard_message]}
 
-    def item_ranking_agent(self, state: RecState):
+    def item_ranker_agent(self, state: RecState):
             print("Item Ranking")
+
+            """
+            
+            ý tưởng là Reflection để đánh giá lại Ranking Item
+            xem lý do nó rank các item như vậy ?? 
+
+            """
 
             blackboard = state['blackboard']
             items_to_rank = state['positive_list']
@@ -148,6 +182,7 @@ class ARAGAgents:
 
             try:
                 result_from_model = self.rank_model.invoke(prompt)
+                print(f"✅ Model đã rank xong. Chiến thuật: {result_from_model.explanation[:100]}...")
             except:
                 result_from_model = None
             if not result_from_model:
@@ -182,7 +217,7 @@ class ARAGAgents:
 
             result =  [item.item_id for item in final_full_ranked_list]
 
-
+            print(f"🏆 Final Rank Order: {result}")
             item_ranking_message = BlackboardMessage(
                 role="ItemRanker",
                 content=result_from_model 

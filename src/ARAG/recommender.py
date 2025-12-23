@@ -29,7 +29,9 @@ class ARAGRecommender:
         self.workflow = builder.build()
 
     def get_recommendation(self, long_term_ctx: str, current_session: str, candidate_item: dict, nli_threshold: float = 4.0) -> RecState:
-        print("🚀 STARTING NEW ARAG RECOMMENDATION RUN 🚀")
+        print("\n" + "="*50)
+        print("🚀 [START] ARAG RECOMMENDATION ENGINE")
+        print("="*50)
 
         run_config = {"configurable": {"nli_threshold": nli_threshold}}
         initial_state = {
@@ -40,5 +42,9 @@ class ARAGRecommender:
         }
         final_state = self.workflow.invoke(initial_state, config=run_config)
 
-        print("🏁 ARAG RECOMMENDATION RUN COMPLETE 🏁")
+        print("\n" + "="*50)
+        print("🏁 [COMPLETE] FINAL RECOMMENDATION RESULTS")
+        print(f"Total Ranked Items: {len(final_state.get('final_rank_list', []))}")
+        print(f"Top 3 IDs: {final_state.get('final_rank_list', [])[:3]}")
+        print("="*50 + "\n")
         return final_state

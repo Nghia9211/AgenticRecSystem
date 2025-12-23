@@ -117,5 +117,5 @@ def create_summary_user_behavior_prompt(lt_ctx : str, cur_ses : str) -> str:
     return SUMMARY_USER_BEHAVIOR_PROMPT_TEMPLATE.format(long_term_context = lt_ctx, current_session = cur_ses)
 def create_context_summary_prompt(user_summary: str, items_with_scores_str: str) -> str:
     return CONTEXT_SUMMARY_PROMPT_TEMPLATE.format(user_summary=user_summary,items_with_scores_str=items_with_scores_str)
-def create_item_ranking_prompt(user_behavior_summary, context_summary,items_to_rank) -> str:
-    return ITEM_RANKING_PROMPT_TEMPLATE.format(user_summary=user_behavior_summary,context_summary=context_summary,items_to_rank_str=items_to_rank)
+def create_item_ranking_prompt(user_summary, context_summary,items_to_rank) -> str:
+    return ITEM_RANKING_PROMPT_TEMPLATE.format(user_summary=user_summary,context_summary=context_summary,items_to_rank_str=items_to_rank)

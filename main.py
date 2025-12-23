@@ -119,9 +119,10 @@ if __name__ == "__main__":
 
     long_term_ctx = processor.long_term_context
     current_session = processor.short_term_context
+    " History review user cold start nhiều nhất có 10 cái, ít nhất là 1 "
+    " 1 item cho short term, các item còn lại cho long term "
 
     final_state = arag_recommender.get_recommendation(
-        user_id = "AE2KV2J6X2OBDKTEAUMIHEXMLFYQ",
         long_term_ctx=long_term_ctx,
         current_session=current_session,
         nli_threshold=3.0,

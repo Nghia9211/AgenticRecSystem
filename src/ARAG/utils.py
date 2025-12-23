@@ -44,3 +44,17 @@ def normalize_item_data(item: dict) -> dict:
         "category": str(category),
         "original_data": item 
     }
+
+def print_agent_step(agent_name: str, message: str, data: Any = None):
+    header = f"=== [AGENT: {agent_name.upper()}] ==="
+    print(f"\n\033[94m{header}\033[0m") # Màu xanh dương
+    print(f"💬 {message}")
+    if data:
+        if isinstance(data, list):
+            print(f"📊 Items count: {len(data)}")
+            for i, item in enumerate(data[:3]): # In 3 cái đầu
+                print(f"   - Item {i+1}: {item}")
+            if len(data) > 3: print("   ...")
+        else:
+            print(f"📝 Data: {data}")
+    print("\033[94m" + "="*len(header) + "\033[0m\n")
