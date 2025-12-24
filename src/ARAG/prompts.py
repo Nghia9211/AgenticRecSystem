@@ -45,6 +45,46 @@ Produce a quantitative similarity score (from 0.0 to 10.0) and a sharp, evidence
 - You MUST provide a numeric score.
 """
 
+ASSESS_NLI_SCORE_PROMPT_TEMPLATE2 = """### ROLE ###
+You are a meticulous Expert Recommendation Analyst. Your core task is to perform Natural Language Inference (NLI) to assess the semantic FIT between a candidate item and a user's behavioral profile.
+
+### GOAL ###
+Produce a quantitative similarity score (from 0.0 to 10.0) and a sharp, evidence-based rationale for your decision.
+
+### CONTEXT ###
+- **User's Preferences:**
+{user_preferences}
+
+### ITEM TO EVALUATE ###
+- **Item ID:** {item_id}
+- **Metadata:**
+{item}
+
+### THINKING PROCESS ###
+1.  **Empathize with the User:** Synthesize the user's core interests from the long-term context and their immediate goal from the current session. Ask: "What is this user's primary motivation? What experience are they seeking?"
+2.  **Dissect the Item:** Extract the most salient attributes, themes, and features of the item from its metadata.
+3.  **Perform Inference & Connect the Dots:**
+    - Directly compare the item's features against the user's profile.
+    - Look for **Entailment**: Does the user's profile strongly suggest an interest in this item?
+    - Look for **Contradiction**: Does this item conflict with what the user typically enjoys?
+    - Consider **Neutrality**: Is the connection weak or purely speculative?
+4.  **Assign Score (Evidence-Based):**
+    - **8.0 - 10.0 (Strong Entailment):** The item is a perfect match for clear, stated user preferences. A "must-recommend."
+    - **5.0 - 7.9 (Plausible Alignment):** The item relates to some user interests but might not be a perfect fit. The connection is reasonable.
+    - **Below 5.0 (Weak or Contradictory):** The link is tenuous, non-existent, or there are contradictory signals.
+5.  **Write Rationale:** Your rationale MUST be evidence-based. Quote specific details from the user profile (e.g., "The user enjoys non-linear narratives...") and connect them to specific item details (e.g., "...and this book is known for its complex, time-bending plot.").
+
+### EXAMPLES of CORRECT vs INCORRECT formatting ###
+- **CORRECT:** `... "score": 8.5 ...` (The score is a number)
+- **INCORRECT:** `... "score": "8.5" ...` (The score is a string, this is wrong!)
+
+### CRITICAL OUTPUT FORMAT ###
+- Your final output MUST BE a direct call to the `NLIContent` tool.
+- DO NOT include ANY introductory text, reasoning, explanations, or markdown formatting (like ```json).
+- Your ENTIRE response must be ONLY the tool call itself.
+- You MUST provide a numeric score.
+"""
+
 SUMMARY_USER_BEHAVIOR_PROMPT_TEMPLATE = """### ROLE ###
 You are an expert User Behavior Analyst. Your goal is to distill raw user interaction data into a concise yet insightful user profile briefing.
 
@@ -119,3 +159,6 @@ def create_context_summary_prompt(user_summary: str, items_with_scores_str: str)
     return CONTEXT_SUMMARY_PROMPT_TEMPLATE.format(user_summary=user_summary,items_with_scores_str=items_with_scores_str)
 def create_item_ranking_prompt(user_summary, context_summary,items_to_rank) -> str:
     return ITEM_RANKING_PROMPT_TEMPLATE.format(user_summary=user_summary,context_summary=context_summary,items_to_rank_str=items_to_rank)
+#Testing New prompt
+def create_assess_nli_score_prompt2(item , user_preferences : str , item_id)->str:
+    return ASSESS_NLI_SCORE_PROMPT_TEMPLATE2.format(item=item, user_preferences=user_preferences, item_id = item_id)

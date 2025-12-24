@@ -16,21 +16,37 @@ class GraphBuilder:
         graph.add_node('context_summary_agent', self.agent_provider.context_summary_agent)
         graph.add_node('item_ranker_agent', self.agent_provider.item_ranker_agent)
         
-        graph.add_edge(START, 'initial_retrieval')
-        graph.add_edge('initial_retrieval', 'nli_agent')
-        graph.add_edge('initial_retrieval', 'user_understanding_agent')
+        # graph.add_edge(START, 'initial_retrieval')
+        # graph.add_edge('initial_retrieval', 'nli_agent')
+        # graph.add_edge('initial_retrieval', 'user_understanding_agent')
 
-        graph.add_edge('nli_agent', 'synchronize')
-        graph.add_edge('user_understanding_agent', 'synchronize')
+        # graph.add_edge(START, 'user_understanding_agent')
+        # graph.add_edge('user_understanding_agent', 'initial_retrieval')
+        # graph.add_edge('initial_retrieval', 'nli_agent')
+
+        # graph.add_edge('nli_agent', 'synchronize')
+        # graph.add_edge('user_understanding_agent', 'synchronize')
+        # graph.add_conditional_edges(
+        #     'synchronize',
+        #     self.agent_provider.should_proceed_to_summary,
+        #     {
+        #         "continue": "context_summary_agent",
+        #         END : END
+        #     }
+        # )
+        # Luồng tuần tự hoàn toàn
+        graph.add_edge(START, 'user_understanding_agent')
+        graph.add_edge('user_understanding_agent', 'initial_retrieval')
+        graph.add_edge('initial_retrieval', 'nli_agent')
+        
         graph.add_conditional_edges(
-            'synchronize',
+            'nli_agent',
             self.agent_provider.should_proceed_to_summary,
             {
                 "continue": "context_summary_agent",
-                END : END
+                END: END
             }
         )
-        
         graph.add_edge('context_summary_agent', 'item_ranker_agent')
         graph.add_edge('item_ranker_agent', END)
 

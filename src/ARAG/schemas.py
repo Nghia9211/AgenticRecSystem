@@ -2,7 +2,7 @@ import uuid
 import operator
 from datetime import datetime, timezone
 from typing import TypedDict, List, Any, Optional, Dict, Union, Literal, Annotated
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field,field_validator
 
 AgentRole = Literal["UserUnderStanding", "NaturalLanguageInference", "ItemRanker", "ContextSummary"]
 class NLIContent(BaseModel):
@@ -19,6 +19,13 @@ class RankedItem(BaseModel):
     name: str = Field(description="The name of the item or business.")
     category: str = Field(default="General", description="Category: Book, Restaurant, Product, etc.") 
     description: str = Field(default="", description="Description.") 
+    @field_validator('description', mode='before')
+    @classmethod
+    def ensure_string(cls, v):
+        # If the LLM returns a list instead of a string, join it or take the first element
+        if isinstance(v, list):
+            return " ".join(str(i) for i in v)
+        return v
 
 class ItemRankerContent(BaseModel):
     ranked_list : List[RankedItem] = Field(description="A list of items, sorted in descending order of recommendation likelihood.")

@@ -19,12 +19,15 @@ class ARAGAgents:
     def initial_retrieval(self, state: RecState):
             """"
 
-            Print các item + Name ra và tìm reason tại sao nó lại retrieve được item đấy    
-            => Loop refine quá trình retrieve 
+            Print item, Name and Reason why retrieve that item    
+            => Loop refine retrieve process
             
             """
-            lt_ctx = state['long_term_ctx']
-            cur_ses = state['current_session']
+            blackboard = state['blackboard']
+            user_understanding_msg = next((msg for msg in reversed(blackboard) if msg.role == "UserUnderStanding"), None)
+            
+            # lt_ctx = state['long_term_ctx']
+            # cur_ses = state['current_session']
             candidate_list = state['candidate_list']
             
             normalized_candidates = []
@@ -38,19 +41,23 @@ class ARAGAgents:
                 norm_item = normalize_item_data(item)
                 normalized_candidates.append(norm_item)
 
-            query = f'Long-term Context : {lt_ctx} \n Current Session {cur_ses } \n '
+            query = f' User Preference : {user_understanding_msg} \n '
     
             top_k_list = find_top_k_similar_items(query, candidate_list, self.embedding_function)
 
-            print_agent_step("Retrieval", "Đã tìm thấy ứng viên tiềm năng", [i.get('name') or i.get('title') for i in top_k_list])
+            print_agent_step("Retrieval", "Found candidate Item !", [i.get('name') or i.get('title') for i in top_k_list])
             
 
             return {'top_k_candidate' : top_k_list, 'candidate_list': normalized_candidates}
 
     def nli_agent(self, state: RecState, config: Optional[RunnableConfig] = None):
         top_k_candidate = state['top_k_candidate']
-        lt_ctx = state['long_term_ctx']
-        cur_ses = state['current_session']
+
+        blackboard = state['blackboard']
+        user_understanding_msg = next((msg for msg in reversed(blackboard) if msg.role == "UserUnderStanding"), None)
+        
+        # lt_ctx = state['long_term_ctx']
+        # cur_ses = state['current_session']
 
         configurable = config.get("configurable", {}) if config else {}
         threshold = configurable.get("nli_threshold", 5.5)
@@ -58,9 +65,15 @@ class ARAGAgents:
         if not top_k_candidate:
             return {'positive_list': [], "blackboard": []}
 
+        # prompts_list = [
+        #     create_assess_nli_score_prompt(
+        #         item=item, lt_ctx = lt_ctx, cur_ses = cur_ses, item_id = item['item_id'])
+        #     for item in top_k_candidate
+        # ]
+
         prompts_list = [
-            create_assess_nli_score_prompt(
-                item=item, lt_ctx = lt_ctx, cur_ses = cur_ses, item_id = item['item_id'])
+            create_assess_nli_score_prompt2(
+                item=item, user_preferences = user_understanding_msg , item_id = item['item_id'])
             for item in top_k_candidate
         ]
         all_nli_outputs = self.score_model.batch(prompts_list)
@@ -71,18 +84,13 @@ class ARAGAgents:
 
         print(f"\033[93m[NLI Scoring]\033[0m Threshold: {threshold}")
         for item, nli_output in zip(top_k_candidate, all_nli_outputs):
-            status = "✅ PASS" if nli_output.score >= threshold else "❌ FAIL"
-            print(f"  - {status} | Score: {nli_output.score:.1f} | Item: {item.get('name')}")
-            
-            if nli_output.score >= threshold:
-                positive_item_list.append(item)
-
-        for item, nli_output in zip(top_k_candidate, all_nli_outputs):
-
             item_name = item.get('name') or item.get('title') or "Unkown"
+
+            status = "✅ PASS" if nli_output.score >= threshold else "❌ FAIL"
+            print(f"  - {status} | Score: {nli_output.score:.1f} | Item: {item_name}")
             print(f"---")
             print(f"Item: {item_name} | Score: {nli_output.score}")
-            print(f"Rationale: {nli_output.rationale}") # QUAN TRỌNG: Xem Agent có đang "bịa" lý do không
+            print(f"Rationale: {nli_output.rationale}") 
             if nli_output.score >= threshold:
                 positive_item_list.append(item)
 
@@ -102,7 +110,7 @@ class ARAGAgents:
         prompt = create_summary_user_behavior_prompt(
             lt_ctx = lt_ctx, cur_ses = cur_ses)
         uua_output = self.model.invoke(prompt).content
-        print_agent_step("User Understanding", "Tóm tắt hành vi người dùng thành công", uua_output)
+        print_agent_step("User Understanding", "Successfully sumarize User Behavior", uua_output)
         uua_blackboard_message = BlackboardMessage(
             role="UserUnderStanding",
             content=uua_output
@@ -141,7 +149,7 @@ class ARAGAgents:
             user_summary=user_summary_text, items_with_scores_str=items_with_scores_str)
         csa_output = self.model.invoke(prompt).content
 
-        print_agent_step("Context Summary", "Đã tạo lý do đề xuất tổng hợp (Rationale)", csa_output)
+        print_agent_step("Context Summary", "Successfully run Context Summary Agent", csa_output)
         
         csa_blackboard_message = BlackboardMessage(
             role="ContextSummary",
@@ -182,7 +190,7 @@ class ARAGAgents:
 
             try:
                 result_from_model = self.rank_model.invoke(prompt)
-                print(f"✅ Model đã rank xong. Chiến thuật: {result_from_model.explanation[:100]}...")
+                print(f"✅ Done Ranking Process . Explanation: {result_from_model.explanation[:100]}...")
             except:
                 result_from_model = None
             if not result_from_model:
@@ -225,18 +233,25 @@ class ARAGAgents:
 
             return {'final_rank_list':result , 'blackboard': [item_ranking_message]}
     
-    def should_proceed_to_summary(self, state: RecState):
-        blackboard = state['blackboard']
+    # def should_proceed_to_summary(self, state: RecState):
+    #     blackboard = state['blackboard']
         
-        has_uua_msg = any(msg.role == "UserUnderStanding" for msg in blackboard)
-        has_nli_msg = any(msg.role == "NaturalLanguageInference" for msg in blackboard)
+    #     has_uua_msg = any(msg.role == "UserUnderStanding" for msg in blackboard)
+    #     has_nli_msg = any(msg.role == "NaturalLanguageInference" for msg in blackboard)
 
-        if has_uua_msg and has_nli_msg:
-            if not state['positive_list']:
-                print("Synchronization check: No positive items found. Halting execution.")
-                return END
-            print("Synchronization check: Both branches complete. Proceeding to summary.")
-            return "continue"
-        else:
-            print("Synchronization check: One or both branches have not completed. This should not happen.")
+    #     if has_uua_msg and has_nli_msg:
+    #         if not state['positive_list']:
+    #             print("Synchronization check: No positive items found. Halting execution.")
+    #             return END
+    #         print("Synchronization check: Both branches complete. Proceeding to summary.")
+    #         return "continue"
+    #     else:
+    #         print("Synchronization check: One or both branches have not completed. This should not happen.")
+    #         return END
+
+    def should_proceed_to_summary(self, state: RecState):
+        if not state.get('positive_list') or len(state['positive_list']) == 0:
+            print("No positive items found after NLI. Stopping.")
             return END
+        
+        return "continue"
