@@ -10,3 +10,7 @@ data/graph_data/*
 test.py
 src/ARAGgcn/lgcn/gcn_embeddings*
 src/ARAGgcn/lgcn/processed_graph_data*
+*pycache*
+__pycache__
+*.pyc
+*.pt

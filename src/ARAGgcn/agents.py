@@ -8,7 +8,7 @@ import re
 import torch
 from .prompts import *
 from .schemas import (BlackboardMessage, ItemRankerContent, NLIContent, RankedItem, RecState)
-from .utils import normalize_item_data, generate_graph_context_string, perform_rag_retrieval
+from .utils import normalize_item_data, generate_graph_context_string, perform_rag_retrieval,debug_ground_truth_hit
 
 class ARAGAgents:
     def __init__(self, model, score_model, rank_model, embedding_function, gcn_path):
@@ -38,7 +38,6 @@ class ARAGAgents:
         cur_ses = state['current_session']
         candidate_list = state['candidate_list']
         
-        # 1. Normalize Candidates
         normalized_candidates = []
         for item in candidate_list:
             if isinstance(item, str):
@@ -56,8 +55,6 @@ class ARAGAgents:
         except:
             pass
         
-        # --- BƯỚC QUAN TRỌNG: GCN CONTEXT GENERATION ---
-        # "Hỏi" đồ thị xem user này liên quan đến những dạng item nào
         print("Generating Graph Context...")
         gcn_context_str = generate_graph_context_string(
             user_history_ids=user_history_ids,
@@ -68,8 +65,6 @@ class ARAGAgents:
         
         print(f"Graph Context: {gcn_context_str[:150]}...") # Log 1 phần để kiểm tra
 
-        # --- BƯỚC CUỐI: RAG RETRIEVAL ---
-        # Tạo câu Query mở rộng (Augmented Query)
         rag_query = (
             f"User History: {lt_ctx}\n"
             f"Current Goal: {cur_ses}\n"
@@ -83,6 +78,15 @@ class ARAGAgents:
             embedding_function=self.embedding_function,
             top_k=7
         )
+
+        debug_ground_truth_hit(
+            index = state['idx'],
+            stage = "1_Initial_Retrieval",
+            items = final_candidates,
+            gt_folder = f"C:/Users/Admin/Desktop/Document/AgenticCode/AgentRecBench/dataset/task/user_cold_start/{state['task_set']}/groundtruth",
+            task_set = state['task_set']
+        )
+            
 
         print(f"✅ Retrieved {len(final_candidates)} items via GCN->RAG pipeline.")
         
@@ -118,6 +122,14 @@ class ARAGAgents:
                     score=nli_output.score
                 )
             )
+        
+        debug_ground_truth_hit(
+            index=state['idx'], 
+            stage="2_NLI_Filtering", 
+            items=positive_item_list,
+            gt_folder=f"C:/Users/Admin/Desktop/Document/AgenticCode/AgentRecBench/dataset/task/user_cold_start/{state['task_set']}/groundtruth",
+            task_set = state['task_set']
+        )
         return {'positive_list': positive_item_list, "blackboard": new_blackboard_messages}
 
     def user_understanding_agent(self, state: RecState):
@@ -250,7 +262,7 @@ class ARAGAgents:
                     unranked_items.append(
                         RankedItem(
                             item_id=item['item_id'],
-                            name=item['name'],
+                            name=item['name'] or item['title'],
                             category=item['category'],
                             description=item['description'] 
                         )
