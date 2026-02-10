@@ -1,9 +1,10 @@
-
-from typing import List, Any, Callable
-import json
-import requests
 from sklearn.metrics.pairwise import cosine_similarity
-import re
+from typing import List, Any, Callable
+import threading
+import datetime
+import csv
+import os
+import json
 
 def find_top_k_similar_items(
     query: str,
@@ -44,36 +45,3 @@ def get_user_understanding(state):
 def get_user_summary(state):
     msg = get_last_message(state['blackboard'], "ContextSummary")
     return msg.content if msg else ""
-
-def parse_structured_output(text: str, pydantic_model):
-    """Bóc tách JSON từ text và ép kiểu vào Pydantic model"""
-    try:
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if match:
-            json_str = match.group()
-            data = json.loads(json_str)
-            return pydantic_model(**data)
-        else:
-            data = json.loads(text)
-            return pydantic_model(**data)
-    except Exception as e:
-        print(f"Lỗi parse JSON: {e} | Text: {text}")
-        return None
-
-def call_llm(prompt, max_tokens=5000):
-    url = "http://159.223.39.25:5678/llm/simple-chat"
-    
-    params = {
-        "prompt": prompt,
-        "max_tokens": max_tokens
-    }
-    
-    try:
-        response = requests.post(url, params=params, timeout=60)
-        
-        response.raise_for_status()
-        
-        return response.text
-    except requests.exceptions.RequestException as e:
-        return f"Lỗi kết nối: {e}"
-    

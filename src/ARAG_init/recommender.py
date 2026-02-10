@@ -10,7 +10,7 @@ from .schemas import ItemRankerContent, NLIContent, RecState
 class ARAGRecommender:
     def __init__(self, model: ChatGroq, data_base_path: str, embed_model_name="sentence-transformers/all-MiniLM-L6-v2"):
         self.embedding_function = HuggingFaceEmbeddings(
-        model_name=embed_model_name)
+            model_name=embed_model_name)
 
         self.loaded_vector_store = FAISS.load_local(
             folder_path=data_base_path,
@@ -28,7 +28,7 @@ class ARAGRecommender:
         builder = GraphBuilder(agent_provider=self.agents)
         self.workflow = builder.build()
 
-    def get_recommendation(self,idx : int, task_set : str,long_term_ctx: str, current_session: str, candidate_item: dict, nli_threshold: float = 4.0) -> RecState:
+    def get_recommendation(self, idx : int, task_set : str,long_term_ctx: str, current_session: str, candidate_item: dict, nli_threshold: float = 4.0) -> RecState:
         print("\n" + "="*50)
         print("🚀 [START] ARAG RECOMMENDATION ENGINE")
         print("="*50)
@@ -44,9 +44,9 @@ class ARAGRecommender:
         }
         final_state = self.workflow.invoke(initial_state, config=run_config)
 
-        # print("\n" + "="*50)
-        # print("🏁 [COMPLETE] FINAL RECOMMENDATION RESULTS")
-        # print(f"Total Ranked Items: {len(final_state.get('final_rank_list', []))}")
-        # print(f"Top 3 IDs: {final_state.get('final_rank_list', [])[:3]}")
-        # print("="*50 + "\n")
+        print("\n" + "="*50)
+        print("🏁 [COMPLETE] FINAL RECOMMENDATION RESULTS")
+        print(f"Total Ranked Items: {len(final_state.get('final_rank_list', []))}")
+        print(f"Top 3 IDs: {final_state.get('final_rank_list', [])[:3]}")
+        print("="*50 + "\n")
         return final_state

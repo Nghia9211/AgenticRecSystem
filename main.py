@@ -7,7 +7,7 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
 from src.ARAGgcn.processing_input import ReviewProcessor
-from src.ARAGgcn.recommender import ARAGgcnRecommender
+from src.ARAGgcnRetrie.recommender import ARAGgcnRecommender
 
 from src.ARAG.recommender import ARAGRecommender
 import json
@@ -121,12 +121,27 @@ if __name__ == "__main__":
     current_session = processor.short_term_context
     " History review user cold start nhiều nhất có 10 cái, ít nhất là 1 "
     " 1 item cho short term, các item còn lại cho long term "
+    processor = ReviewProcessor(target_source='amazon')
 
-    final_state = arag_recommender.get_recommendation(
-        long_term_ctx=long_term_ctx,
-        current_session=current_session,
-        nli_threshold=3.0,
-        candidate_item = candidate_items_data)
+
+    if args.recommender == 'arag' :
+        final_state = arag_recommender.get_recommendation(
+            idx = 0,
+            task_set="amazon",
+            long_term_ctx=long_term_ctx,
+            current_session=current_session,
+            nli_threshold=3.0,
+            candidate_item = candidate_items_data)
+    elif args.recommender == 'araggcn':
+        final_state = arag_recommender.get_recommendation(
+            user_id ="AE2KV2J6X2OBDKTEAUMIHEXMLFYQ" ,
+            long_term_ctx=long_term_ctx,
+            current_session=current_session,
+            nli_threshold=3.0,
+            candidate_item = candidate_items_data)
+        print("ARAG GCN")
+
+
     
     print("\n\n--- FINAL RANKED LIST ---")
     if final_state.get('final_rank_list'):
