@@ -14,3 +14,6 @@ src/ARAGgcn/lgcn/processed_graph_data*
 __pycache__
 *.pyc
 *.pt
+*.csv
+*.png
+*.txt
