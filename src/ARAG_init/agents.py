@@ -47,7 +47,7 @@ class ARAGAgents:
         cur_ses = state['current_session']
 
 
-        if not top_k_candidate:
+        if not top_k_candidate_raw:
             return {'positive_list': [], "blackboard": []}
 
         top_k_candidate = []
@@ -197,7 +197,7 @@ class ARAGAgents:
     def should_proceed_to_summary(self, state: RecState):
         blackboard = state['blackboard']
         
-        has_uua_msg = any(msg.role == "UserUnderStanding" for msg in blackboard)
+        has_uua_msg = get_user_understanding(state)
         has_nli_msg = any(msg.role == "NaturalLanguageInference" for msg in blackboard)
 
         if has_uua_msg and has_nli_msg:

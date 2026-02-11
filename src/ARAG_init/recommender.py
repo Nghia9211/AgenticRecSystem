@@ -28,7 +28,15 @@ class ARAGRecommender:
         builder = GraphBuilder(agent_provider=self.agents)
         self.workflow = builder.build()
 
-    def get_recommendation(self, idx : int, task_set : str,long_term_ctx: str, current_session: str, candidate_item: dict, nli_threshold: float = 4.0) -> RecState:
+    def get_recommendation(
+            self, 
+            idx : int, 
+            task_set : str,
+            long_term_ctx: str, 
+            current_session: str, 
+            candidate_item: dict, 
+            nli_threshold: float = 4.0
+            ) -> RecState:
         print("\n" + "="*50)
         print("🚀 [START] ARAG RECOMMENDATION ENGINE")
         print("="*50)

@@ -37,6 +37,7 @@ metrics_logger = ARAGMetrics()
 
 def evaluate_hit_rate(index: int, stage: str, items: list, gt_folder: str, task_set: str = "unknown"):
     """Hàm tách biệt để kiểm tra ground truth"""
+    print(f"\n\nCác Item :{items} \n\n" )
     file_path = os.path.join(gt_folder, f"groundtruth_{index}.json")
     if not os.path.exists(file_path):
         return False
