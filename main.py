@@ -7,7 +7,7 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
 from src.ARAGgcn.processing_input import ReviewProcessor
-from src.ARAGgcn.recommender import ARAGgcnRecommender
+from src.ARAGgcnRetrie.recommender import ARAGgcnRecommender
 
 from src.ARAG.recommender import ARAGRecommender
 import json

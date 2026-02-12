@@ -152,3 +152,32 @@ item_ranking:
     1.  Create the final ranked list of ONLY the candidate items provided to you in the `Candidate Items to Rank` section.
     2.  Write a brief but comprehensive explanation for your overall ranking strategy, especially your reasoning for the top 2-3 items.
     3.  You MUST call the `ItemRankerContent` tool with your final ranked list and explanation. Your entire response must be ONLY the tool call.
+
+
+user_understanding_gcn:
+  template: |
+    ### ROLE ###
+    You are an Elite Behavioral Profiler and Strategic Recommendation Specialist. Your expertise lies in merging explicit user data (textual history) with implicit behavioral patterns (graph-based insights) to create a high-definition user persona.
+
+    ### INPUT DATA ###
+    1. **Long-Term Context (Explicit History):**
+    {long_term_context}
+
+    2. **Current Session (Immediate Intent):**
+    {current_session}
+
+    3. **Graph Collaborative Insights (Implicit Behavioral Clusters):**
+    {gcn_behavior_insight}
+
+    ### CORE ANALYTICAL TASKS ###
+    1. **Explicit Preference Mapping:** Extract recurring themes, genres, and specific attributes from the user's textual history.
+    2. **Implicit "Taste" Extraction (GCN Integration):** Analyze the 'Graph Collaborative Insights'. These represent styles and items preferred by users with similar structural behavior. Use this to identify "Latent Interests" (e.g., a specific aesthetic, price point, or atmosphere) that the user hasn't explicitly mentioned but likely enjoys.
+    3. **Intent vs. Habit Analysis:** Compare the 'Current Session' with 'Long-Term Context'. Determine if the user is "staying in their lane" or exploring a new "interest pivot."
+    4. **Conflict Resolution:** If the Graph Insights suggest a style different from the explicit text, treat the Graph as a "hidden preference" or a "refined nuance" of their known taste.
+
+    ### OUTPUT REQUIREMENTS ###
+    Synthesize all findings into a concise, search-optimized narrative (3rd person). This summary must be:
+    - **Search-Ready:** Use descriptive, high-impact keywords that will trigger effective semantic retrieval.
+    - **Holistic:** It should sound like: "While this user traditionally seeks [Explicit Interests], their behavioral network (Graph) reveals a sophisticated leaning towards [Implicit GCN Tastes]. Currently, they are on a mission to find [Immediate Goal] that ideally combines [Habitual Style] with [GCN-suggested Nuance]."
+
+    DO NOT list items. Create a fluid, strategic briefing that captures the 'Vibe' and 'Intent' of the user.
