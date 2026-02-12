@@ -1,38 +1,37 @@
-# --- START OF FILE utils.py ---
-
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import List, Any, Callable, Dict
 import torch
 import torch.nn.functional as F
 import json
-import os
-import csv
-from datetime import datetime
-import threading
 
-def normalize_item_data(item: dict) -> dict:
-    item_id = str(item.get('item_id', item.get('sub_item_id', 'unknown_id')))
-    name = item.get('title') or item.get('name') or item.get('business_name') or f"Item {item_id}"
-    raw_desc = item.get('description') or item.get('text') or ""
-    if isinstance(raw_desc, list):
-        clean_desc = " ".join([str(x) for x in raw_desc])
-    else:
-        clean_desc = str(raw_desc)
-    category = item.get('categories') or item.get('type') or "General"
-    if isinstance(category, list):
-        category = ", ".join(category)
+def find_top_k_similar_items(
+    query: str,
+    candidate_list: List[Any],
+    embedding_function: Callable,
+    k: int = 5
+) -> List[Any]:
+
+    query_vec = embedding_function.embed_query(query)
+    texts = [json.dumps(normalize_item_data(c)) for c in candidate_list]
+
+    item_vecs = embedding_function.embed_documents(texts)
+    sims = cosine_similarity([query_vec], item_vecs)[0]
+    
+    results = sorted(zip(candidate_list, sims), key=lambda x: x[1], reverse=True)
+    return [res[0] for res in results[:k]]
+
+def normalize_item_data(item: Any) -> dict:
+    """Chuẩn hóa dữ liệu item từ nhiều nguồn khác nhau."""
+    if isinstance(item, str):
+        try: item = json.loads(item.replace("'", '"'))
+        except: return {}
 
     return {
-        "item_id": item_id,
-        "name": name,
-        "description": clean_desc,
-        "category": str(category),
-        "original_data": item 
+        "item_id": str(item.get('item_id', item.get('sub_item_id', 'unknown'))),
+        "name": item.get('title') or item.get('name') or item.get('title_without_series'),
+        "description": str(item.get('description') or item.get('attributes') or "")[:200],
+        "Rating": str(item.get('stars') or item.get('average_rating') or ""),
     }
-
-def get_batch_embeddings(texts: List[str], embedding_function: Callable) -> torch.Tensor:
-    vectors = embedding_function.embed_documents(texts)
-    return torch.tensor(vectors)
 
 def generate_graph_context_string(
     user_history_ids: List[str],
@@ -90,7 +89,6 @@ def generate_graph_context_string(
             main_cat = "Book" 
             
             for s in shelves:
-                # Kiểm tra s phải là dict mới được .get()
                 if isinstance(s, dict):
                     tag_name = s.get('name')
                     if tag_name and tag_name not in ignore_tags:
@@ -105,90 +103,43 @@ def generate_graph_context_string(
     )
 
     return context_str
-def perform_rag_retrieval(
-    augmented_query: str,
-    candidate_list: List[dict],
-    embedding_function: Callable,
-    top_k: int = 5) -> List[dict]:
-    """
-    Hàm RAG thuần túy:
-    Dùng câu query (đã được bơm GCN Context) để tìm kiếm Semantic Similarity.
-    """
-    
-    query_vec = embedding_function.embed_query(augmented_query)
 
-    candidate_texts = [
-        f"Name: {item['name'] or item['title']}. Category: {item['category']}. Description: {item['description'][:300]}" 
-        for item in candidate_list
-    ]
-    cand_vecs = embedding_function.embed_documents(candidate_texts)
-    sims = cosine_similarity([query_vec], cand_vecs)[0]
+
+# def perform_rag_retrieval(
+#     augmented_query: str,
+#     candidate_list: List[dict],
+#     embedding_function: Callable,
+#     top_k: int = 5) -> List[dict]:
+#     """
+#     Hàm RAG thuần túy:
+#     Dùng câu query (đã được bơm GCN Context) để tìm kiếm Semantic Similarity.
+#     """
     
-    sorted_indices = sims.argsort()[::-1][:top_k]
+#     query_vec = embedding_function.embed_query(augmented_query)
+
+#     candidate_texts = [
+#         f"Name: {item['name'] or item['title']}. Category: {item['category']}. Description: {item['description'][:300]}" 
+#         for item in candidate_list
+#     ]
+#     cand_vecs = embedding_function.embed_documents(candidate_texts)
+#     sims = cosine_similarity([query_vec], cand_vecs)[0]
     
-    results = []
-    for idx in sorted_indices:
-        results.append(candidate_list[idx])
+#     sorted_indices = sims.argsort()[::-1][:top_k]
+    
+#     results = []
+#     for idx in sorted_indices:
+#         results.append(candidate_list[idx])
         
-    return results
+#     return results
 
 
+def get_last_message(blackboard, role):
+    return next((msg for msg in reversed(blackboard) if msg.role == role), None)
 
-class ARAGMetrics:
-    def __init__(self, filename="recommendation_stats_ARAG_GCN.csv"):
-        self.filename = filename
-        self.lock = threading.Lock()
+def get_user_understanding(state):
+    msg = get_last_message(state['blackboard'], "UserUnderStanding")
+    return msg.content if msg else ""
 
-        if not os.path.exists(self.filename):
-            with open(self.filename, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(["Timestamp", "Task_Set", "Index", "Stage", "GT_ID", "Hit", "Total_Items", "Position"])
-
-    def log_hit(self, task_set, index, stage, gt_id, is_hit, total_items, position):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with self.lock:
-            with open(self.filename, 'a', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow([timestamp, task_set, index, stage, gt_id, is_hit, total_items, position])
-
-metrics_logger = ARAGMetrics()
-
-def debug_ground_truth_hit(index: int, stage: str, items: list, gt_folder: str, task_set: str = "unknown"):
-    """
-    Kiểm tra và ghi log kết quả tìm thấy Ground Truth
-    """
-    file_path = os.path.join(gt_folder, f"groundtruth_{index}.json")
-    
-    if not os.path.exists(file_path):
-        return False, "N/A"
-
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            gt_data = json.load(f)
-            gt_id = str(gt_data.get("ground truth", ""))
-    except Exception:
-        return False, "N/A"
-
-    current_ids = []
-    for item in items:
-        if isinstance(item, dict):
-            current_ids.append(str(item.get('item_id', '')))
-        else:
-            current_ids.append(str(getattr(item, 'item_id', '')))
-
-    is_hit = gt_id in current_ids
-    position = current_ids.index(gt_id) + 1 if is_hit else -1
-
-    metrics_logger.log_hit(
-        task_set=task_set,
-        index=index,
-        stage=stage,
-        gt_id=gt_id,
-        is_hit=is_hit,
-        total_items=len(current_ids),
-        position=position
-    )
-    status_icon = "✅" if is_hit else "❌"
-    print(f"{status_icon} [{stage}] Index {index}: GT {gt_id} {'FOUND at pos ' + str(position) if is_hit else 'NOT FOUND'}")
-    
-    return is_hit
+def get_user_summary(state):
+    msg = get_last_message(state['blackboard'], "ContextSummary")
+    return msg.content if msg else ""

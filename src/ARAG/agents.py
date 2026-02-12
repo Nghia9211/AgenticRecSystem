@@ -54,8 +54,6 @@ class ARAGAgents:
                 gt_folder = self._get_gt_path(state),
                 task_set = state['task_set']
             )
-            
-
             return {'top_k_candidate' : top_k_list}
 
     def nli_agent(self, state: RecState, config: Optional[RunnableConfig] = None):

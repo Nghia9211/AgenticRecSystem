@@ -44,5 +44,10 @@ class ARAGgcnRecommender:
         }
         final_state = self.workflow.invoke(initial_state, config=run_config)
 
+        print("\n" + "="*50)
+        print("🏁 [COMPLETE] FINAL RECOMMENDATION RESULTS")
+        print(f"Total Ranked Items: {len(final_state.get('final_rank_list', []))}")
+        print(f"Top 3 IDs: {final_state.get('final_rank_list', [])[:3]}")
+        print("="*50 + "\n")
         print("🏁 ARAG RECOMMENDATION RUN COMPLETE 🏁")
         return final_state
