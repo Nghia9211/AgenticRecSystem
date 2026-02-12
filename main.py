@@ -134,6 +134,8 @@ if __name__ == "__main__":
             candidate_item = candidate_items_data)
     elif args.recommender == 'araggcn':
         final_state = arag_recommender.get_recommendation(
+            idx = 0,
+            task_set="amazon",
             user_id ="AE2KV2J6X2OBDKTEAUMIHEXMLFYQ" ,
             long_term_ctx=long_term_ctx,
             current_session=current_session,

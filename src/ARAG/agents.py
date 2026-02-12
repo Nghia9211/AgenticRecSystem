@@ -8,7 +8,7 @@ from .prompts import *
 from .schemas import (BlackboardMessage,
                           RankedItem, RecState)
 from .metric import evaluate_hit_rate
-from .utils import find_top_k_similar_items,normalize_item_data,get_user_understanding,get_user_summary
+from .utils import *
 
 
 class ARAGAgents:
@@ -54,8 +54,6 @@ class ARAGAgents:
                 gt_folder = self._get_gt_path(state),
                 task_set = state['task_set']
             )
-            
-
             return {'top_k_candidate' : top_k_list}
 
     def nli_agent(self, state: RecState, config: Optional[RunnableConfig] = None):
