@@ -7,9 +7,15 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
 from src.ARAGgcn.processing_input import ReviewProcessor
-from src.ARAGgcnRetrie.recommender import ARAGgcnRecommender
 
 from src.ARAG.recommender import ARAGRecommender
+from src.ARAG_init.recommender import ARAGrawRecommender
+from src.ARAGgcnRetrie.recommender import ARAGgcnRetrieRecommender
+from src.ARAGgcn.recommender import ARAGgcnRecommender
+from src.ARAGfinal.recommender import ARAGgcnv2Recommender
+
+
+
 import json
 
 if __name__ == "__main__":
@@ -24,7 +30,7 @@ if __name__ == "__main__":
                         help="The LLM provider to use.")
     
     parser.add_argument("--recommender", 
-                        choices=['arag', 'araggcn'],
+                        choices=['arag', 'araggcn', 'araginit', 'araggcnretrie', 'aragv2'],
                         default='arag', 
                         help="Recommender")
                         
@@ -92,7 +98,32 @@ if __name__ == "__main__":
             embed_model_name=args.embed_model,
             gcn_model_path=r'./src/ARAGgcn/lgcn/gcn_embeddings_3hop_amazon.pt',
         )
-        print("ARAG GCN")
+    elif args.recommender == 'araginit':
+        arag_recommender = ARAGrawRecommender(
+            model=model, 
+            data_base_path=args.db_path,
+            embed_model_name=args.embed_model,
+        )
+    elif args.recommender == 'araggcnretrie':
+        arag_recommender = ARAGgcnRetrieRecommender(
+            model=model, 
+            data_base_path=args.db_path,
+            embed_model_name=args.embed_model,
+            gcn_model_path=r'./src/ARAGgcn/lgcn/gcn_embeddings_3hop_amazon.pt',
+        )
+    elif args.recommender == 'aragv2':
+        arag_recommender = ARAGgcnv2Recommender(
+                model=model,
+                data_base_path=args.db_path,
+                gcn_embedding_path=r"C:\Users\Admin\Desktop\Document\AgenticCode\RecSystemCode\src\ARAGfinal\lgcn\gcn_embeddings_3hop_amazon.pt",
+                gcn_review_file="data/review.json",
+                gcn_item_file="data/item.json",
+                gcn_user_file="data/user.json",
+                gcn_gt_mask_file="data/graph_data/final_mask_amazon.json",
+            )
+
+
+
     processor = ReviewProcessor(target_source='amazon')
     
     try:
@@ -141,8 +172,33 @@ if __name__ == "__main__":
             current_session=current_session,
             nli_threshold=3.0,
             candidate_item = candidate_items_data)
-        print("ARAG GCN")
-
+    elif args.recommender == 'araginit':
+        final_state = arag_recommender.get_recommendation(
+            idx = 0,
+            task_set="amazon",
+            long_term_ctx=long_term_ctx,
+            current_session=current_session,
+            nli_threshold=3.0,
+            candidate_item = candidate_items_data)
+    elif args.recommender == 'araggcnretrie':
+        final_state = arag_recommender.get_recommendation(
+            idx = 0,
+            task_set="amazon",
+            user_id ="AE2KV2J6X2OBDKTEAUMIHEXMLFYQ" ,
+            long_term_ctx=long_term_ctx,
+            current_session=current_session,
+            nli_threshold=3.0,
+            candidate_item = candidate_items_data)
+    elif args.recommender == 'aragv2':
+        final_state = arag_recommender.get_recommendation(
+            idx = 0,
+            task_set="amazon",
+            user_id ="AE2KV2J6X2OBDKTEAUMIHEXMLFYQ" ,
+            long_term_ctx=long_term_ctx,
+            current_session=current_session,
+            nli_threshold=3.0,
+            candidate_item = candidate_items_data,
+            gcn_top_K = 20)
 
     
     print("\n\n--- FINAL RANKED LIST ---")

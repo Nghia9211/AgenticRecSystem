@@ -7,7 +7,7 @@ from .graph_builder import GraphBuilder
 from .schemas import ItemRankerContent, NLIContent, RecState
 
 
-class ARAGgcnRecommender:
+class ARAGgcnRetrieRecommender:
     def __init__(self, model: ChatGroq, data_base_path: str, embed_model_name="sentence-transformers/all-MiniLM-L6-v2", gcn_model_path: str = None, graph_data_path = None):
         self.embedding_function = HuggingFaceEmbeddings(
             model_name=embed_model_name)
