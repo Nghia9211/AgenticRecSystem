@@ -5,7 +5,7 @@ set "PYTHON_SCRIPT=main.py"
 set "PROVIDER=groq"
 set "INPUT_FILE=tests/user_amazon.json"
 set "DB_PATH=storage/item_storage_amazon"
-set "RECOMMENDER=aragv2"
+set "RECOMMENDER=arag"
 set "MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct"
 
 set "EMBED_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2"

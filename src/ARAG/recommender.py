@@ -6,6 +6,46 @@ from .agents import ARAGAgents
 from .graph_builder import GraphBuilder
 from .schemas import ItemRankerContent, NLIContent, RecState
 
+from .utils import call_llm, parse_structured_output, get_json_format_instructions
+class CustomRemoteLLM:
+    def __init__(self, model_name="custom-model"):
+        self.model_name = model_name
+
+    def invoke(self, prompt):
+        # Giả lập đối tượng response của LangChain (có thuộc tính .content)
+        class Response:
+            def __init__(self, content):
+                self.content = content
+        
+        # Nếu prompt là chuỗi thì gửi trực tiếp, nếu là List (LangChain style) thì lấy text
+        prompt_text = prompt if isinstance(prompt, str) else str(prompt)
+        content = call_llm(prompt_text)
+        return Response(content)
+
+    def with_structured_output(self, schema_model):
+        return StructuredWrapper(self, schema_model)
+
+class StructuredWrapper:
+    def __init__(self, llm, schema_model):
+        self.llm = llm
+        self.schema_model = schema_model
+
+    def invoke(self, prompt):
+        # 1. Thêm hướng dẫn JSON vào prompt
+        instructions = get_json_format_instructions(self.schema_model)
+        full_prompt = f"{prompt}\n{instructions}"
+        
+        # 2. Gọi API
+        raw_response = self.llm.invoke(full_prompt)
+        
+        # 3. Parse kết quả về Pydantic object
+        parsed_obj = parse_structured_output(raw_response.content, self.schema_model)
+        return parsed_obj
+
+    def batch(self, prompts):
+        # Chạy tuần tự hoặc dùng ThreadPoolExecutor để nhanh hơn
+        return [self.invoke(p) for p in prompts]
+
 
 class ARAGRecommender:
     def __init__(self, model: ChatGroq, data_base_path: str, embed_model_name="sentence-transformers/all-MiniLM-L6-v2"):
@@ -19,10 +59,20 @@ class ARAGRecommender:
             distance_strategy="COSINE"
         )
         
+        # self.agents = ARAGAgents(
+        #     model=model,
+        #     score_model=model.with_structured_output(NLIContent),
+        #     rank_model=model.with_structured_output(ItemRankerContent),
+        #     embedding_function=self.embedding_function
+        # )
+        self.custom_model = CustomRemoteLLM()
+        
+        # Khởi tạo Agents với custom model
+        # Lưu ý: method .with_structured_output bây giờ sẽ chạy qua wrapper của mình
         self.agents = ARAGAgents(
-            model=model,
-            score_model=model.with_structured_output(NLIContent),
-            rank_model=model.with_structured_output(ItemRankerContent),
+            model=self.custom_model,
+            score_model=self.custom_model.with_structured_output(NLIContent),
+            rank_model=self.custom_model.with_structured_output(ItemRankerContent),
             embedding_function=self.embedding_function
         )
         builder = GraphBuilder(agent_provider=self.agents)

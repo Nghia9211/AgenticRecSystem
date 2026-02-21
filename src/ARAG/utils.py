@@ -77,3 +77,40 @@ def call_llm(prompt, max_tokens=5000):
     except requests.exceptions.RequestException as e:
         return f"Lỗi kết nối: {e}"
     
+    # utils.py (Bổ sung thêm)
+
+def get_json_format_instructions(pydantic_model):
+    """Tạo hướng dẫn định dạng JSON dựa trên Pydantic model."""
+    schema = pydantic_model.schema()
+    return f"\n\nIMPORTANT: You must return ONLY a JSON object that matches this schema:\n{json.dumps(schema, indent=2)}\nDO NOT include any explanation or markdown code blocks like ```json."
+
+def parse_structured_output(text: str, pydantic_model):
+    """Bóc tách JSON từ text (có xử lý wrapper 'response') và ép kiểu vào Pydantic model"""
+    try:
+        # 1. Thử parse lớp vỏ bên ngoài (API wrapper)
+        try:
+            outer_data = json.loads(text)
+            if isinstance(outer_data, dict) and "response" in outer_data:
+                # Lấy nội dung bên trong trường 'response'
+                text = outer_data["response"]
+        except Exception:
+            # Nếu không phải JSON wrapper, cứ để text nguyên bản để xử lý tiếp
+            pass
+
+        # 2. Làm sạch markdown (```json ...)
+        clean_text = re.sub(r'```json|```', '', text).strip()
+
+        # 3. Tìm khối JSON { ... } thực sự
+        match = re.search(r"\{.*\}", clean_text, re.DOTALL)
+        if match:
+            json_str = match.group()
+            data = json.loads(json_str)
+            return pydantic_model(**data)
+        else:
+            # Thử parse trực tiếp nếu không tìm thấy cặp ngoặc qua regex
+            data = json.loads(clean_text)
+            return pydantic_model(**data)
+            
+    except Exception as e:
+        print(f"❌ Lỗi parse JSON: {e} | Text nhận được: {text[:200]}...")
+        return None
