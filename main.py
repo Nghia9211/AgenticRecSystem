@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     if args.recommender == 'arag' :
         arag_recommender = ARAGRecommender(
-            model=model, 
+            model=None, 
             data_base_path=args.db_path,
             embed_model_name=args.embed_model,
         )

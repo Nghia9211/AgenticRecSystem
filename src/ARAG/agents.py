@@ -174,7 +174,7 @@ class ARAGAgents:
             result_from_model = None
 
             try:
-                print("🚀 [DEBUG] Sending request to Groq Model...")
+                print("🚀 [DEBUG] Sending request Model...")
                 result_from_model = self.rank_model.invoke(prompt)
                 print(f"✅ [DEBUG] Model Response Received. Explanation len: {len(result_from_model.explanation if result_from_model else '')}")
             except Exception as e:
