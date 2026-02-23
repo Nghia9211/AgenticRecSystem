@@ -68,16 +68,18 @@ def call_llm(prompt, max_tokens=5000):
         "max_tokens": max_tokens
     }
     
+    
     try:
         response = requests.post(url, params=params, timeout=60)
         
         response.raise_for_status()
+
+        print(f"\n\n\n Response : {response.text} \n\n\n")
         
         return response.text
     except requests.exceptions.RequestException as e:
         return f"Lỗi kết nối: {e}"
     
-    # utils.py (Bổ sung thêm)
 
 def get_json_format_instructions(pydantic_model):
     """Tạo hướng dẫn định dạng JSON dựa trên Pydantic model."""

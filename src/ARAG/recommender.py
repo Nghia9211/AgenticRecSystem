@@ -7,6 +7,8 @@ from .graph_builder import GraphBuilder
 from .schemas import ItemRankerContent, NLIContent, RecState
 
 from .utils import call_llm, parse_structured_output, get_json_format_instructions
+
+
 class CustomRemoteLLM:
     def __init__(self, model_name="custom-model"):
         self.model_name = model_name
@@ -52,29 +54,30 @@ class ARAGRecommender:
         self.embedding_function = HuggingFaceEmbeddings(
         model_name=embed_model_name)
 
-        self.loaded_vector_store = FAISS.load_local(
-            folder_path=data_base_path,
-            embeddings=self.embedding_function,
-            allow_dangerous_deserialization=True,
-            distance_strategy="COSINE"
-        )
-        
-        # self.agents = ARAGAgents(
-        #     model=model,
-        #     score_model=model.with_structured_output(NLIContent),
-        #     rank_model=model.with_structured_output(ItemRankerContent),
-        #     embedding_function=self.embedding_function
+        # self.loaded_vector_store = FAISS.load_local(
+        #     folder_path=data_base_path,
+        #     embeddings=self.embedding_function,
+        #     allow_dangerous_deserialization=True,
+        #     distance_strategy="COSINE"
         # )
-        self.custom_model = CustomRemoteLLM()
-        
-        # Khởi tạo Agents với custom model
-        # Lưu ý: method .with_structured_output bây giờ sẽ chạy qua wrapper của mình
-        self.agents = ARAGAgents(
-            model=self.custom_model,
-            score_model=self.custom_model.with_structured_output(NLIContent),
-            rank_model=self.custom_model.with_structured_output(ItemRankerContent),
-            embedding_function=self.embedding_function
-        )
+        if model:
+            print("\n\n\n MODEL ACCEPT \n\n\n")   
+            self.agents = ARAGAgents(
+                model=model,
+                score_model=model.with_structured_output(NLIContent),
+                rank_model=model.with_structured_output(ItemRankerContent),
+                embedding_function=self.embedding_function
+            )
+        else : 
+            print("\n\n\n SERVER ACCEPT \n\n\n")   
+            self.custom_model = CustomRemoteLLM()
+            
+            self.agents = ARAGAgents(
+                model=self.custom_model,
+                score_model=self.custom_model.with_structured_output(NLIContent),
+                rank_model=self.custom_model.with_structured_output(ItemRankerContent),
+                embedding_function=self.embedding_function
+            )
         builder = GraphBuilder(agent_provider=self.agents)
         self.workflow = builder.build()
 
