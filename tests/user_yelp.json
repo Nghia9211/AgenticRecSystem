@@ -1,0 +1,403 @@
+{
+    "user_reviews": [
+        {
+            "review_id": "BiTunyQ73aT9WBnpR9DZGw",
+            "user_id": "OyoGAe7OKpv6SyGZT5g77Q",
+            "item_id": "7ATYjTIgM3jUlt4UM3IypQ",
+            "stars": 5.0,
+            "useful": 1,
+            "funny": 0,
+            "cool": 1,
+            "text": "I've taken a lot of spin classes over the years, and nothing compares to the classes at Body Cycle. From the nice, clean space and amazing bikes, to the welcoming and motivating instructors, every class is a top notch work out.\n\nFor anyone who struggles to fit workouts in, the online scheduling system makes it easy to plan ahead (and there's no need to line up way in advanced like many gyms make you do).\n\nThere is no way I can write this review without giving Russell, the owner of Body Cycle, a shout out. Russell's passion for fitness and cycling is so evident, as is his desire for all of his clients to succeed. He is always dropping in to classes to check in/provide encouragement, and is open to ideas and recommendations from anyone. Russell always wears a smile on his face, even when he's kicking your butt in class!",
+            "date": "2012-01-03 15:28:18",
+            "source": "yelp",
+            "type": "business"
+        },
+        {
+            "review_id": "sk6u1nDJVafRvfID_b8BKQ",
+            "user_id": "OyoGAe7OKpv6SyGZT5g77Q",
+            "item_id": "qjGS_7iaQDpbVhS6W8qkHQ",
+            "stars": 5.0,
+            "useful": 0,
+            "funny": 0,
+            "cool": 0,
+            "text": "Welcome to the neighborhood, Sweet Life Bakeshop!\n\nMy girlfriends and I were in a cupcake mood, and Yelp led us to Sweet Life. I live in the neighborhood and had no idea they had moved in. I am so thankful that my fellow Yelpers led us to them.\n\nFirst off, the owners were so friendly and welcoming. We ordered cupcakes, and then I inquired about the banana pudding. I was assured it was \"the best\" so of course we ordered that too. Boy oh boy, were they right. The pudding was to die for, and the cupcakes were delicious. My friend is still talking about her coconut cupcake.\n\nCan't wait to share the \"sweet\" news of a delicious new bakeshop with my friends and neighbors!",
+            "date": "2015-04-16 16:34:29",
+            "source": "yelp",
+            "type": "business"
+        },
+        {
+            "review_id": "5UuzfztGwOp8PqlShQMqcg",
+            "user_id": "OyoGAe7OKpv6SyGZT5g77Q",
+            "item_id": "cwn_MBPFUJtme68WURSgKA",
+            "stars": 1.0,
+            "useful": 3,
+            "funny": 1,
+            "cool": 0,
+            "text": "We decided to give the Barrel House another shot as we live in the neighborhood. We took our friends and their young daughter. Service was very slow and we never got all of our drinks. The food took forever to come out. When we asked for our check they said their systems were down and that was causing the delay- not sure why they couldn't have offered this information earlier. To top it all off, our entire party got very sick after dinner (and no one ate the same thing). Needless to say, we'll never go back.",
+            "date": "2016-04-11 12:37:22",
+            "source": "yelp",
+            "type": "business"
+        }
+    ],
+     "candidate_list": [
+    {
+        "item_id": "WXqI9e10OuUGugW1Jj3ATQ",
+        "name": "The UPS Store",
+        "stars": 2.5,
+        "review_count": 25,
+        "attributes": null
+    },
+    {
+        "item_id": "Q93hDbLqgCHx9l1zmP5Gcg",
+        "name": "Ivy Student Movers",
+        "stars": 4.5,
+        "review_count": 68,
+        "attributes": {
+            "ByAppointmentOnly": "True",
+            "RestaurantsPriceRange2": "1",
+            "BusinessAcceptsCreditCards": "False",
+            "BikeParking": "False",
+            "BusinessAcceptsBitcoin": "False",
+            "BusinessParking": "{'garage': False, 'street': False, 'validated': False, 'lot': False, 'valet': False}",
+            "DogsAllowed": "True"
+        }
+    },
+    {
+        "item_id": "iQMGNjgTqZWhgDH_nGwKfQ",
+        "name": "Nova Star Pharmacy",
+        "stars": 5.0,
+        "review_count": 21,
+        "attributes": {
+            "RestaurantsPriceRange2": "2",
+            "BusinessAcceptsCreditCards": "True",
+            "BikeParking": "True",
+            "BusinessParking": "{'garage': False, 'street': True, 'validated': False, 'lot': False, 'valet': False}"
+        }
+    },
+    {
+        "item_id": "Pcxef4vgyFAfNgsFW7peNw",
+        "name": "Enterprise Rent-A-Car",
+        "stars": 2.0,
+        "review_count": 6,
+        "attributes": null
+    },
+    {
+        "item_id": "PP3BBaVxZLcJU54uP_wL6Q",
+        "name": "Pat's King of Steaks",
+        "stars": 3.0,
+        "review_count": 4250,
+        "attributes": {
+            "RestaurantsReservations": "False",
+            "Corkage": "False",
+            "RestaurantsTakeOut": "True",
+            "BYOBCorkage": "'no'",
+            "BikeParking": "True",
+            "Alcohol": "'none'",
+            "RestaurantsAttire": "'casual'",
+            "BusinessAcceptsCreditCards": "False",
+            "RestaurantsGoodForGroups": "True",
+            "GoodForKids": "True",
+            "WiFi": "u'no'",
+            "Caters": "False",
+            "HasTV": "True",
+            "GoodForMeal": "{'dessert': False, 'latenight': True, 'lunch': True, 'dinner': True, 'brunch': False, 'breakfast': False}",
+            "OutdoorSeating": "True",
+            "RestaurantsDelivery": "True",
+            "BusinessParking": "{'garage': False, 'street': True, 'validated': False, 'lot': True, 'valet': False}",
+            "RestaurantsTableService": "False",
+            "Ambience": "{'touristy': True, 'hipster': False, 'romantic': False, 'divey': False, 'intimate': False, 'trendy': False, 'upscale': False, 'classy': True, 'casual': False}",
+            "HappyHour": "False",
+            "NoiseLevel": "u'average'",
+            "DogsAllowed": "True",
+            "RestaurantsPriceRange2": "2"
+        }
+    },
+    {
+        "item_id": "pIYV5rf6APmubs5F04xiqA",
+        "name": "Candiiees Studio Natural Hair Salon",
+        "stars": 4.5,
+        "review_count": 9,
+        "attributes": {
+            "WiFi": "u'free'",
+            "BusinessAcceptsCreditCards": "False",
+            "WheelchairAccessible": "False",
+            "ByAppointmentOnly": "False",
+            "BusinessParking": "{'garage': False, 'street': False, 'validated': False, 'lot': False, 'valet': False}",
+            "BikeParking": "True",
+            "HairSpecializesIn": "{'straightperms': False, 'coloring': False, 'extensions': True, 'africanamerican': True, 'curly': True, 'kids': True, 'perms': False, 'asian': True}"
+        }
+    },
+    {
+        "item_id": "Tx9pbav8fRr-kC_Bdzn1pg",
+        "name": "Center City Notary",
+        "stars": 4.0,
+        "review_count": 28,
+        "attributes": {
+            "BusinessAcceptsCreditCards": "True"
+        }
+    },
+    {
+        "item_id": "REJ5UMeKH0Ylkf7Ym1rXMA",
+        "name": "Hawkeye's New York Style Pizza",
+        "stars": 4.5,
+        "review_count": 54,
+        "attributes": {
+            "ByAppointmentOnly": "False",
+            "DogsAllowed": "False",
+            "RestaurantsTakeOut": "True",
+            "WheelchairAccessible": "True",
+            "BusinessParking": "{'garage': False, 'street': False, 'validated': False, 'lot': False, 'valet': False}",
+            "RestaurantsReservations": "False",
+            "BYOB": "False",
+            "WiFi": "u'no'",
+            "Caters": "True",
+            "Ambience": "{'touristy': False, 'hipster': False, 'romantic': False, 'divey': False, 'intimate': False, 'trendy': False, 'upscale': False, 'classy': False, 'casual': False}",
+            "NoiseLevel": "u'quiet'",
+            "GoodForMeal": "{'dessert': False, 'latenight': False, 'lunch': False, 'dinner': False, 'brunch': False, 'breakfast': False}",
+            "HappyHour": "False",
+            "BusinessAcceptsCreditCards": "True",
+            "OutdoorSeating": "False",
+            "RestaurantsAttire": "u'casual'",
+            "HasTV": "True",
+            "BusinessAcceptsBitcoin": "False",
+            "RestaurantsPriceRange2": "2",
+            "RestaurantsDelivery": "True",
+            "Corkage": "False",
+            "Alcohol": "u'none'",
+            "RestaurantsTableService": "False",
+            "BikeParking": "False"
+        }
+    },
+    {
+        "item_id": "JreLMvu6O-Ul4elrFKDSnA",
+        "name": "Cafe Italiano",
+        "stars": 4.0,
+        "review_count": 16,
+        "attributes": {
+            "RestaurantsPriceRange2": "1",
+            "BusinessAcceptsCreditCards": "False",
+            "WiFi": "u'free'",
+            "OutdoorSeating": "True"
+        }
+    },
+    {
+        "item_id": "5ZmtpDISs3R7rnv4dIEl8Q",
+        "name": "The Owls Club",
+        "stars": 4.0,
+        "review_count": 89,
+        "attributes": {
+            "Ambience": "{'touristy': False, 'hipster': True, 'romantic': False, 'divey': False, 'intimate': True, 'trendy': True, 'upscale': False, 'classy': True, 'casual': True}",
+            "HasTV": "True",
+            "RestaurantsReservations": "False",
+            "WiFi": "'no'",
+            "BusinessParking": "{'garage': False, 'street': True, 'validated': False, 'lot': False, 'valet': False}",
+            "Music": "{'dj': False, 'background_music': False, 'no_music': False, 'jukebox': False, 'live': True, 'video': False, 'karaoke': False}",
+            "BusinessAcceptsCreditCards": "True",
+            "GoodForDancing": "False",
+            "RestaurantsGoodForGroups": "True",
+            "BikeParking": "True",
+            "ByAppointmentOnly": "False",
+            "BestNights": "{'monday': False, 'tuesday': False, 'friday': False, 'wednesday': False, 'thursday': False, 'sunday': False, 'saturday': False}",
+            "Smoking": "u'outdoor'",
+            "OutdoorSeating": "None",
+            "Alcohol": "'full_bar'",
+            "NoiseLevel": "u'loud'",
+            "HappyHour": "True",
+            "WheelchairAccessible": "True",
+            "DogsAllowed": "True",
+            "BusinessAcceptsBitcoin": "False",
+            "RestaurantsPriceRange2": "2",
+            "CoatCheck": "False"
+        }
+    },
+    {
+        "item_id": "CTk8dt--a0PMU8vUu-GDqw",
+        "name": "Dental Care On Golf Links",
+        "stars": 5.0,
+        "review_count": 5,
+        "attributes": {
+            "ByAppointmentOnly": "True",
+            "AcceptsInsurance": "True",
+            "WiFi": "u'free'",
+            "BusinessAcceptsCreditCards": "True"
+        }
+    },
+    {
+        "item_id": "bMcDtFj0fDjSD1TqF_v0SQ",
+        "name": "Fry's Food & Drug Stores",
+        "stars": 3.0,
+        "review_count": 14,
+        "attributes": {
+            "BikeParking": "True",
+            "BusinessParking": "{'garage': False, 'street': False, 'validated': False, 'lot': True, 'valet': False}",
+            "RestaurantsPriceRange2": "2",
+            "BusinessAcceptsCreditCards": "True"
+        }
+    },
+    {
+        "item_id": "ML9SUq5nhtieXuBitr4TZw",
+        "name": "Golden Movers",
+        "stars": 4.0,
+        "review_count": 15,
+        "attributes": {
+            "BusinessAcceptsCreditCards": "True",
+            "BusinessAcceptsBitcoin": "False"
+        }
+    },
+    {
+        "item_id": "J8S7cPPlTgsQnXKVfTyN8g",
+        "name": "PYT",
+        "stars": 3.0,
+        "review_count": 806,
+        "attributes": {
+            "RestaurantsTakeOut": "True",
+            "RestaurantsGoodForGroups": "True",
+            "BusinessParking": "{'garage': False, 'street': True, 'validated': False, 'lot': True, 'valet': False}",
+            "OutdoorSeating": "True",
+            "RestaurantsAttire": "u'casual'",
+            "BusinessAcceptsCreditCards": "True",
+            "RestaurantsReservations": "False",
+            "GoodForKids": "False",
+            "Alcohol": "u'full_bar'",
+            "RestaurantsDelivery": "False",
+            "BikeParking": "True",
+            "HasTV": "True",
+            "Caters": "False",
+            "RestaurantsPriceRange2": "2",
+            "NoiseLevel": "u'loud'",
+            "WiFi": "'free'",
+            "Ambience": "{'romantic': False, 'intimate': False, 'touristy': False, 'hipster': True, 'divey': False, 'classy': False, 'trendy': False, 'upscale': False, 'casual': False}",
+            "GoodForDancing": "False",
+            "GoodForMeal": "{'dessert': False, 'latenight': False, 'lunch': False, 'dinner': True, 'brunch': False, 'breakfast': False}"
+        }
+    },
+    {
+        "item_id": "u-MF7O0mULjBnjz71fNplQ",
+        "name": "Advanced Urgent Care",
+        "stars": 2.0,
+        "review_count": 32,
+        "attributes": {
+            "ByAppointmentOnly": "False"
+        }
+    },
+    {
+        "item_id": "WMyF7FDJBl3H2cL0Pe25Lg",
+        "name": "Subway",
+        "stars": 2.5,
+        "review_count": 20,
+        "attributes": {
+            "BikeParking": "True",
+            "BusinessParking": "{'garage': False, 'street': False, 'validated': False, 'lot': False, 'valet': False}",
+            "RestaurantsTakeOut": "True",
+            "GoodForKids": "True",
+            "RestaurantsGoodForGroups": "True",
+            "RestaurantsReservations": "False",
+            "Alcohol": "u'none'",
+            "RestaurantsAttire": "u'casual'",
+            "BusinessAcceptsCreditCards": "True",
+            "Caters": "True",
+            "OutdoorSeating": "True",
+            "Ambience": "{'romantic': False, 'intimate': False, 'classy': False, 'hipster': False, 'divey': False, 'touristy': False, 'trendy': False, 'upscale': False, 'casual': True}",
+            "WiFi": "u'no'",
+            "GoodForMeal": "{'dessert': False, 'latenight': False, 'lunch': False, 'dinner': False, 'brunch': False, 'breakfast': False}",
+            "HasTV": "True",
+            "RestaurantsPriceRange2": "1",
+            "NoiseLevel": "u'average'",
+            "RestaurantsDelivery": "True"
+        }
+    },
+    {
+        "item_id": "gh2Oc17i-FYsUYU1kcmP5w",
+        "name": "Doozer Construction",
+        "stars": 2.5,
+        "review_count": 7,
+        "attributes": {
+            "BusinessAcceptsCreditCards": "True",
+            "BusinessAcceptsBitcoin": "False",
+            "ByAppointmentOnly": "False"
+        }
+    },
+    {
+        "item_id": "Bih0eT_lbbCUwKmGYpX0hw",
+        "name": "Ricci's Hoagies",
+        "stars": 4.0,
+        "review_count": 67,
+        "attributes": {
+            "OutdoorSeating": "True",
+            "RestaurantsDelivery": "True",
+            "RestaurantsAttire": "'casual'",
+            "Alcohol": "u'none'",
+            "Corkage": "False",
+            "RestaurantsPriceRange2": "1",
+            "RestaurantsReservations": "False",
+            "BYOBCorkage": "'yes_free'",
+            "GoodForKids": "True",
+            "NoiseLevel": "u'average'",
+            "BusinessParking": "{'garage': False, 'street': True, 'validated': False, 'lot': False, 'valet': False}",
+            "BikeParking": "False",
+            "RestaurantsTakeOut": "True",
+            "WiFi": "u'no'",
+            "Caters": "True",
+            "HasTV": "True",
+            "WheelchairAccessible": "True",
+            "GoodForMeal": "{'dessert': False, 'latenight': False, 'lunch': True, 'dinner': False, 'brunch': False, 'breakfast': False}",
+            "Ambience": "{'touristy': False, 'hipster': False, 'romantic': False, 'divey': False, 'intimate': False, 'trendy': False, 'upscale': False, 'classy': False, 'casual': False}",
+            "BusinessAcceptsCreditCards": "True",
+            "RestaurantsGoodForGroups": "True"
+        }
+    },
+    {
+        "item_id": "lPbfldf06Ndb09CAXSPdWQ",
+        "name": "Great Village Chinese Restaurant",
+        "stars": 4.0,
+        "review_count": 132,
+        "attributes": {
+            "RestaurantsPriceRange2": "1",
+            "OutdoorSeating": "False",
+            "Alcohol": "u'beer_and_wine'",
+            "BusinessParking": "{'garage': False, 'street': False, 'validated': False, 'lot': True, 'valet': False}",
+            "WiFi": "u'no'",
+            "RestaurantsAttire": "u'casual'",
+            "BusinessAcceptsCreditCards": "True",
+            "NoiseLevel": "'average'",
+            "RestaurantsGoodForGroups": "True",
+            "GoodForKids": "True",
+            "RestaurantsReservations": "True",
+            "RestaurantsTakeOut": "True",
+            "BikeParking": "True",
+            "Caters": "False",
+            "GoodForMeal": "{'dessert': False, 'latenight': False, 'lunch': True, 'dinner': True, 'brunch': False, 'breakfast': False}",
+            "RestaurantsDelivery": "True",
+            "HasTV": "True",
+            "Ambience": "{'touristy': None, 'hipster': False, 'romantic': None, 'divey': False, 'intimate': None, 'trendy': None, 'upscale': False, 'classy': False, 'casual': True}"
+        }
+    },
+    {
+        "item_id": "eQHk2EMRtkYZR6DH-xGQhA",
+        "name": "The Ugly American",
+        "stars": 3.5,
+        "review_count": 61,
+        "attributes": {
+            "RestaurantsReservations": "True",
+            "RestaurantsDelivery": "False",
+            "HasTV": "True",
+            "BusinessAcceptsCreditCards": "True",
+            "NoiseLevel": "u'average'",
+            "BusinessParking": "{'garage': False, 'street': True, 'validated': False, 'lot': False, 'valet': False}",
+            "Alcohol": "'full_bar'",
+            "GoodForKids": "False",
+            "WiFi": "u'no'",
+            "RestaurantsAttire": "'casual'",
+            "RestaurantsTakeOut": "True",
+            "RestaurantsPriceRange2": "2",
+            "BYOBCorkage": "'no'",
+            "RestaurantsGoodForGroups": "True",
+            "Caters": "False",
+            "Ambience": "{'romantic': False, 'intimate': False, 'touristy': False, 'hipster': False, 'divey': False, 'classy': False, 'trendy': False, 'upscale': False, 'casual': True}",
+            "OutdoorSeating": "True",
+            "HappyHour": "True"
+        }
+    }
+]
+}

@@ -3,33 +3,24 @@ setlocal
 
 set "PYTHON_SCRIPT=main.py"
 set "PROVIDER=groq"
-set "INPUT_FILE=tests/user_amazon.json"
-set "DB_PATH=storage/item_storage_amazon"
+
+:: CHỈ CẦN THAY ĐỔI DATASET Ở ĐÂY: amazon, goodreads, hoặc yelp
+set "DATASET=yelp"
+
 set "RECOMMENDER=arag"
 set "MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct"
-
 set "EMBED_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2"
 
-
 echo ======================================================
-echo       RUNNING ARAG RECOMMENDER SYSTEM
+echo       RUNNING ARAG: %DATASET%
 echo ======================================================
-echo Input file:       %INPUT_FILE%
-echo Database path:    %DB_PATH%
-echo Model:            %MODEL_NAME%
-echo ------------------------------------------------------
 
 python %PYTHON_SCRIPT% ^
+    --dataset "%DATASET%" ^
     --provider "%PROVIDER%" ^
-    --recommender "%RECOMMENDER%"^
-    --input_file "%INPUT_FILE%" ^
-    --db-path "%DB_PATH%" ^
+    --recommender "%RECOMMENDER%" ^
     --model "%MODEL_NAME%" ^
     --embed-model "%EMBED_MODEL_NAME%" 
 
 echo ------------------------------------------------------
-echo       SCRIPT EXECUTION FINISHED
-echo ======================================================
-
-REM 
 pause
