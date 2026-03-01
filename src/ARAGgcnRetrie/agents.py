@@ -1,203 +1,173 @@
 import json
+import re
+import traceback
 from typing import Optional
-import traceback 
+
+import torch
 from langgraph.graph import END
 from langchain_core.runnables import RunnableConfig
-import ast
-import re
-import torch
+
 from .prompts import *
-from .schemas import (BlackboardMessage, ItemRankerContent, NLIContent, RankedItem, RecState)
-from .utils import *
-from .metric import *
- 
+from .schemas import BlackboardMessage, ItemRankerContent, NLIContent, RankedItem, RecState
+from .utils import (
+    find_top_k_similar_items, normalize_item,
+    get_gcn_latent_interests, get_user_understanding, get_user_summary,
+)
+from .metric import evaluate_hit_rate
+
+
 class ARAGAgents:
     def __init__(self, model, score_model, rank_model, embedding_function, gcn_path):
-        self.model = model
-        self.score_model = score_model
-        self.rank_model = rank_model
+        self.model            = model
+        self.score_model      = score_model
+        self.rank_model       = rank_model
         self.embedding_function = embedding_function
+        self.gcn_embeddings   = None
 
-        self.gcn_embeddings = None
         if gcn_path:
             try:
                 self.gcn_embeddings = torch.load(gcn_path)
-                print("GCN Embeddings loaded successfully.")
+                print("GCN embeddings loaded.")
             except Exception as e:
                 print(f"WARNING: Could not load GCN embeddings: {e}")
-   
-    def _get_gt_path(self, state):
-        # return f"./dataset/task/user_cold_start/{state['task_set']}/groundtruth"
-        return f"C:/Users/Admin/Desktop/Document/AgenticCode/AgentRecBench/dataset/task/user_cold_start/{state['task_set']}/groundtruth"
 
+    def _gt_path(self, state):
+        return (
+            f"C:/Users/Admin/Desktop/Document/AgenticCode/AgentRecBench"
+            f"/dataset/task/user_cold_start/{state['task_set']}/groundtruth"
+        )
+
+    # ── 1. USER UNDERSTANDING ────────────────────────────────────────────────
+    def user_understanding_agent(self, state: RecState):
+        history_ids = re.findall(r"'item_id':\s*'([^']+)'", str(state['long_term_ctx']))
+
+        gcn_insight = get_gcn_latent_interests(
+            history_ids, self.gcn_embeddings, state['candidate_list']
+        )
+        prompt     = create_uua_prompt(state['long_term_ctx'], state['current_session'], gcn_insight)
+        uua_output = self.model.invoke(prompt).content
+
+        return {"blackboard": [BlackboardMessage(role="UserUnderStanding", content=uua_output)]}
+
+    # ── 2. INITIAL RETRIEVAL ─────────────────────────────────────────────────
     def initial_retrieval(self, state: RecState):
-        user_understanding_msg = get_user_understanding(state)
-        
-        query = f' User Preference : {user_understanding_msg} \n '
-
-        top_k_list = find_top_k_similar_items(query, state['candidate_list'], self.embedding_function)
-        
+        query    = f"User Preference: {get_user_understanding(state)}"
+        top_k    = find_top_k_similar_items(
+            query, state['candidate_list'], self.embedding_function, k=5
+        )
         evaluate_hit_rate(
-                index = state['idx'],
-                stage = "1_Initial_Retrieval",
-                items = top_k_list,
-                gt_folder = self._get_gt_path(state),
-                task_set = state['task_set']
-            )
-        
-        return {'top_k_candidate': top_k_list}
-    
+            index=state['idx'], stage="1_Initial_Retrieval",
+            items=top_k, gt_folder=self._gt_path(state), task_set=state['task_set'],
+        )
+        return {'top_k_candidate': top_k}
+
+    # ── 3. NLI AGENT ────────────────────────────────────────────────────────
     def nli_agent(self, state: RecState, config: Optional[RunnableConfig] = None):
-        threshold = config.get("configurable", {}).get("nli_threshold", 5.5) if config else 5.5
-        top_k_candidate_raw = state['top_k_candidate']
+        threshold  = (config or {}).get("configurable", {}).get("nli_threshold", 5.5)
+        user_pref  = get_user_understanding(state)
+        candidates = [normalize_item(i) for i in state['top_k_candidate']]
 
-        user_understanding_msg = get_user_understanding(state)
-
-        if not top_k_candidate_raw:
+        if not candidates:
             return {'positive_list': [], "blackboard": []}
 
-        top_k_candidate = []
-        for item in top_k_candidate_raw:
-            top_k_candidate.append(normalize_item_data(item))
-            
-        prompts_list = [
-            create_assess_nli_score_prompt2(
-                item=item, user_preferences=user_understanding_msg if user_understanding_msg else "", item_id=item['item_id'])
-            for item in top_k_candidate
+        prompts = [
+            create_nli_prompt(item=c, user_preferences=user_pref, item_id=c['item_id'])
+            for c in candidates
         ]
-        all_nli_outputs = self.score_model.batch(prompts_list)
+        outputs = self.score_model.batch(prompts)
 
-        positive_item_list = []
-        messages = []
+        positive, messages = [], []
+        print(f"\033[93m[NLI]\033[0m threshold={threshold}")
+        for item, out in zip(candidates, outputs):
+            passed = out.score >= threshold
+            print(f"  {'✅' if passed else '❌'} {out.score:.1f} | {item.get('name','?')}")
+            if passed:
+                positive.append(item)
+            messages.append(BlackboardMessage(role="NaturalLanguageInference",
+                                              content=out, score=out.score))
 
-        print(f"\033[93m[NLI Scoring]\033[0m Threshold: {threshold}")
-        for item, nli_output in zip(top_k_candidate, all_nli_outputs):
-            item_name = item.get('name') or item.get('title') or "Unknown"
-            status = "✅ PASS" if nli_output.score >= threshold else "❌ FAIL"
-            print(f"  - {status} | Score: {nli_output.score:.1f} | Item: {item_name}")
-            
-            if nli_output.score >= threshold:
-                positive_item_list.append(item)
- 
-            messages.append(
-                BlackboardMessage(
-                    role="NaturalLanguageInference",
-                    content=nli_output,
-                    score=nli_output.score
-                )
-            )
-        
+        output_state = {
+            'positive_list': positive, 
+            "blackboard": messages
+        }
+
+        if not positive:
+            output_state['final_rank_list'] = [str(item.get('item_id')) for item in state['candidate_list']]
+
         evaluate_hit_rate(
-            index=state['idx'], 
-            stage="2_NLI_Filtering", 
-            items=positive_item_list,
-            gt_folder=self._get_gt_path(state),
-            task_set = state['task_set']
+            index=state['idx'], stage="2_NLI_Filtering",
+            items=positive, gt_folder=self._gt_path(state), task_set=state['task_set'],
         )
-        
-        return {'positive_list': positive_item_list, "blackboard": messages}
+        return output_state
 
-    def user_understanding_agent(self, state: RecState):
-        lt_ctx = state['long_term_ctx']
-        cur_ses = state['current_session']
-        candidate_list = state['candidate_list']
-
-        user_history_ids = re.findall(r"'item_id':\s*'([^']+)'", str(lt_ctx))
-        
-        gcn_behavior_insight = get_gcn_latent_interests(user_history_ids, self.gcn_embeddings, candidate_list)
-
-        prompt = create_uua_gcn_prompt(lt_ctx, cur_ses, gcn_behavior_insight)
-        
-        uua_output = self.model.invoke(prompt).content
-        
-        uua_blackboard_message = BlackboardMessage(
-            role="UserUnderStanding",
-            content=uua_output
-        )
-
-        return {"blackboard": [uua_blackboard_message]}
-
+    # ── 4. CONTEXT SUMMARY ───────────────────────────────────────────────────
     def context_summary_agent(self, state: RecState):
-        blackboard = state['blackboard']
-        positive_item = state['positive_list']
+        if not state.get('positive_list'):
+            return {"blackboard": [BlackboardMessage(role="ContextSummary",
+                                                     content="No positive items found.")]}
 
-        if not positive_item:
-            return {"blackboard": [BlackboardMessage(role="ContextSummary", content="No positive items found.")]}
+        positive_ids = {i['item_id'] for i in state['positive_list']}
+        nli_msgs     = [m for m in state['blackboard'] if m.role == "NaturalLanguageInference"]
 
-        user_understanding_msg = get_user_understanding(state)
-        
-        nli_messages = [msg for msg in blackboard if msg.role == "NaturalLanguageInference"]
-        positive_item_ids = {item['item_id'] for item in positive_item}
+        scored_str = ""
+        for msg in nli_msgs:
+            if msg.content.item_id in positive_ids:
+                item = next((i for i in state['positive_list']
+                             if i['item_id'] == msg.content.item_id), None)
+                if item:
+                    scored_str += f"Item: {item}\nScore: {msg.score}/10\nRationale: {msg.content.rationale}\n---\n"
 
-        items_with_scores_str = ""
-        for msg in nli_messages:
-            if msg.content.item_id in positive_item_ids:
-                item_data = next((item for item in positive_item if item['item_id'] == msg.content.item_id), None)
-                if item_data:
-                    items_with_scores_str += (f"Item: {item_data}\nNLI Score: {msg.score}/10\nRationale: {msg.content.rationale}\n---\n")
+        prompt = create_context_summary_prompt(
+            user_summary=get_user_understanding(state),
+            items_with_scores_str=scored_str,
+        )
+        output = self.model.invoke(prompt).content
+        return {'blackboard': [BlackboardMessage(role="ContextSummary", content=output)]}
 
-        prompt = create_context_summary_prompt(user_summary=user_understanding_msg, items_with_scores_str=items_with_scores_str)
-        csa_output = self.model.invoke(prompt).content
-
-        
-        return {'blackboard': [BlackboardMessage(role="ContextSummary", content=csa_output)]}
-
+    # ── 5. ITEM RANKER ───────────────────────────────────────────────────────
     def item_ranker_agent(self, state: RecState):
-            items_to_rank = state['positive_list']
-            candidate_list = state['candidate_list']
+        to_rank   = state['positive_list']
+        all_items = state['candidate_list']
 
-            if not items_to_rank:
-                print("⚠️ [DEBUG] No items in positive_list. Skipping LLM call.")
-                final_list = [item.get('item_id') for item in candidate_list]
-                return {'final_rank_list': final_list}
+        if not to_rank:
+            return {'final_rank_list': [i.get('item_id') for i in all_items]}
 
-            context_summary = get_user_summary(state)
-            user_understanding = get_user_understanding(state)
-            
-            items_to_rank_str = json.dumps(items_to_rank, indent=2, ensure_ascii=False)
-            prompt = create_item_ranking_prompt(
-                user_summary=user_understanding, 
-                context_summary=context_summary, 
-                items_to_rank=items_to_rank_str) 
-            
+        prompt = create_ranking_prompt(
+            user_summary=get_user_understanding(state),
+            context_summary=get_user_summary(state),
+            items_to_rank=json.dumps(to_rank, indent=2, ensure_ascii=False),
+        )
+
+        result = None
+        for attempt in range(2):
             try:
-                print("🚀 [DEBUG] Sending request to Groq Model...")
-                result_from_model = self.rank_model.invoke(prompt)
-                print(f"✅ [DEBUG] Model Response Received. Explanation len: {len(result_from_model.explanation if result_from_model else '')}")
+                result = self.rank_model.invoke(prompt)
+                break                               
             except Exception as e:
-                print(f"❌ [DEBUG] LỖI KHI GỌI MODEL RANKER: {str(e)}")
-                import traceback
+                err_msg = str(e)
+                print(f"⚠️  Ranker attempt {attempt+1} failed: {err_msg[:120]}")
                 traceback.print_exc()
-            
+        if result:
+            ranked = result.ranked_list
+        else:
+            ranked = [RankedItem(item_id=str(i.get('item_id')),
+                                 name=str(i.get('name', 'Unknown')),
+                                 description="Fallback") for i in to_rank]
 
-            if not result_from_model:
-                print("⚠️ [DEBUG] Model failed/Returned None. Using fallback order.")
-                ranked_positive_items = [
-                    RankedItem(
-                        item_id=str(i.get('item_id')),
-                        name=str(i.get('title') or i.get('name') or 'Unknown'),
-                        description="Fallback"
-                    ) for i in items_to_rank
-                ]
-            else:
-                ranked_positive_items = result_from_model.ranked_list
+        ranked_ids   = {str(r.item_id) for r in ranked}
+        unranked_ids = [str(i['item_id']) for i in all_items if str(i['item_id']) not in ranked_ids]
+        final_ids    = [str(r.item_id) for r in ranked] + unranked_ids
 
-            ranked_item_ids = {str(item.item_id) for item in ranked_positive_items}
-            unranked_items_ids = [str(item['item_id']) for item in candidate_list if str(item['item_id']) not in ranked_item_ids]
+        print(f"🏆 Rank: {final_ids[:5]}... ({len(final_ids)} total)")
+        return {
+            'final_rank_list': final_ids,
+            'blackboard': [BlackboardMessage(role="ItemRanker",
+                                             content=result or "Fallback ranking used")],
+        }
 
-            final_result_ids = [str(item.item_id) for item in ranked_positive_items] + unranked_items_ids
-            
-            print(f"🏆 [DEBUG] Final Rank Order: {final_result_ids[:5]}... (Total: {len(final_result_ids)})")
-
-            item_ranking_message = BlackboardMessage(
-                role="ItemRanker",
-                content=result_from_model if result_from_model else "Fallback ranking used"
-            )
-
-            return {'final_rank_list': final_result_ids, 'blackboard': [item_ranking_message]}
-
+    # ── ROUTER ───────────────────────────────────────────────────────────────
     def should_proceed_to_summary(self, state: RecState):
-        if not state.get('positive_list') or len(state['positive_list']) == 0:
-            print("No positive items found after NLI. Stopping.")
+        if not state.get('positive_list'):
+            print("No positive items — stopping early.")
             return END
         return "continue"
