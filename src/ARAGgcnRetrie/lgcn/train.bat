@@ -1,7 +1,6 @@
 @echo off
 TITLE LightGCN Pipeline (Build Graph + Train)
 
-
 set BUILD_SCRIPT=build_graph_lgcn.py
 set TRAIN_SCRIPT=train.py
 
@@ -11,7 +10,7 @@ set BASE_PATH=C:\Users\Admin\Desktop\Document\AgenticCode\RecSystemCode\data\gra
 set USER_FILE=%BASE_PATH%\user_%TASK_TYPE%.json
 set ITEM_FILE=%BASE_PATH%\item_%TASK_TYPE%.json
 set REVIEW_FILE=%BASE_PATH%\review_%TASK_TYPE%.json
-set GT_FILE=%BASE_PATH%\final_mask_%TASK_TYPE%.json
+set GT_FILE=%BASE_PATH%\ground_truth_gcn_%TASK_TYPE%.json
 
 set OUTPUT_DATA=processed_graph_data_%TASK_TYPE%.pt
 set OUTPUT_EMB=gcn_embeddings_3hop_%TASK_TYPE%.pt
@@ -50,8 +49,6 @@ if %ERRORLEVEL% NEQ 0 (
     pause
     exit /b
 )
-
-
 
 
 

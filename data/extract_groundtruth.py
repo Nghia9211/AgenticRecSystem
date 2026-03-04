@@ -43,4 +43,6 @@ def combine_user_groundtruth(folder_path, output_file):
     print(f"Hoàn thành! Đã lưu {len(combined_data)} bản ghi vào file {output_file}")
 
 # Sử dụng hàm (Thay '.' bằng đường dẫn thư mục chứa các file của bạn)
-combine_user_groundtruth(folder_path=r'C:\Users\Admin\Desktop\Document\AgenticCode\AgentRecBench\dataset\task\user_cold_start\yelp', output_file='final_mask_yelp.json')
+DATASET = "amazon"
+SCENARIO = "classic"
+combine_user_groundtruth(folder_path=f'C:/Users/Admin/Desktop/Document/AgenticCode/AgentRecBench/dataset/task/{SCENARIO}/{DATASET}', output_file='final_mask_amazon_classic.json')
