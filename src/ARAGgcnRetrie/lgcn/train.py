@@ -58,7 +58,7 @@ def main():
     reg_history  = []
 
     best_loss = float('inf')
-    patience  = 50         
+    patience  = 50   
     no_improve = 0
 
     for epoch in range(args.epochs):
